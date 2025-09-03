@@ -15,6 +15,7 @@ describe("Task Integration Tests", () => {
       "mongodb://localhost:27017/pixel-engine-test";
 
     app = new App();
+    await app.start(); // Start the server
     database = Database.getInstance();
     await database.connect();
   });
@@ -22,6 +23,7 @@ describe("Task Integration Tests", () => {
   afterAll(async () => {
     await database.clearDatabase();
     await database.disconnect();
+    await app.stop(); // Stop the server
   });
 
   beforeEach(async () => {
@@ -30,20 +32,14 @@ describe("Task Integration Tests", () => {
 
   describe("POST /api/tasks", () => {
     it("should create a task with valid image path", async () => {
-      const testImagePath = path.join(__dirname, "../fixtures/test-image.jpg");
+      const testImagePath = path.join(__dirname, "../fixtures/more.png");
 
-      // Create a test image file if it doesn't exist
+      // Ensure test image exists
       if (!(await fs.pathExists(testImagePath))) {
-        await fs.ensureDir(path.dirname(testImagePath));
-        // Create a minimal valid JPEG file for testing
-        const jpegHeader = Buffer.from([
-          0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00,
-          0x01, 0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00, 0x00, 0xff, 0xd9,
-        ]);
-        await fs.writeFile(testImagePath, jpegHeader);
+        throw new Error(`Test image not found: ${testImagePath}`);
       }
 
-      const response = await request(app)
+      const response = await request(app.getApp())
         .post("/api/tasks")
         .send({ imagePath: testImagePath })
         .expect(201);
@@ -58,7 +54,7 @@ describe("Task Integration Tests", () => {
     });
 
     it("should return 400 for missing imagePath", async () => {
-      const response = await request(app)
+      const response = await request(app.getApp())
         .post("/api/tasks")
         .send({})
         .expect(400);
@@ -69,7 +65,7 @@ describe("Task Integration Tests", () => {
     });
 
     it("should return 400 for invalid imagePath type", async () => {
-      const response = await request(app)
+      const response = await request(app.getApp())
         .post("/api/tasks")
         .send({ imagePath: 123 })
         .expect(400);
@@ -80,7 +76,7 @@ describe("Task Integration Tests", () => {
     });
 
     it("should return 500 for non-existent image file", async () => {
-      const response = await request(app)
+      const response = await request(app.getApp())
         .post("/api/tasks")
         .send({ imagePath: "/non/existent/image.jpg" })
         .expect(500);
@@ -93,18 +89,13 @@ describe("Task Integration Tests", () => {
   describe("GET /api/tasks/:taskId", () => {
     it("should return task details for valid taskId", async () => {
       // First create a task
-      const testImagePath = path.join(__dirname, "../fixtures/test-image.jpg");
+      const testImagePath = path.join(__dirname, "../fixtures/more.png");
 
       if (!(await fs.pathExists(testImagePath))) {
-        await fs.ensureDir(path.dirname(testImagePath));
-        const jpegHeader = Buffer.from([
-          0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00,
-          0x01, 0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00, 0x00, 0xff, 0xd9,
-        ]);
-        await fs.writeFile(testImagePath, jpegHeader);
+        throw new Error(`Test image not found: ${testImagePath}`);
       }
 
-      const createResponse = await request(app)
+      const createResponse = await request(app.getApp())
         .post("/api/tasks")
         .send({ imagePath: testImagePath })
         .expect(201);
@@ -112,7 +103,7 @@ describe("Task Integration Tests", () => {
       const taskId = createResponse.body.data.taskId;
 
       // Then get the task
-      const response = await request(app)
+      const response = await request(app.getApp())
         .get(`/api/tasks/${taskId}`)
         .expect(200);
 
@@ -126,7 +117,7 @@ describe("Task Integration Tests", () => {
     it("should return 404 for non-existent taskId", async () => {
       const fakeTaskId = "507f1f77bcf86cd799439011"; // Valid ObjectId format
 
-      const response = await request(app)
+      const response = await request(app.getApp())
         .get(`/api/tasks/${fakeTaskId}`)
         .expect(404);
 
@@ -136,7 +127,7 @@ describe("Task Integration Tests", () => {
     });
 
     it("should return 400 for invalid taskId format", async () => {
-      const response = await request(app)
+      const response = await request(app.getApp())
         .get("/api/tasks/invalid-id")
         .expect(400);
 
@@ -148,7 +139,7 @@ describe("Task Integration Tests", () => {
 
   describe("Health Check", () => {
     it("should return health status", async () => {
-      const response = await request(app).get("/health").expect(200);
+      const response = await request(app.getApp()).get("/health").expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe("Pixel Engine API is running");
