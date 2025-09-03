@@ -10,6 +10,8 @@ import {
   TaskStatusType,
 } from "../types";
 import mongoose from "mongoose";
+import { Worker } from "worker_threads";
+import path from "path";
 
 export class TaskService {
   /**
@@ -41,8 +43,8 @@ export class TaskService {
       const savedTask = await task.save();
       Logger.info("Task created", { taskId: savedTask._id, price });
 
-      // Processa a imagem de forma assíncrona
-      this.processImageAsync(
+      // Processa a imagem usando Worker Thread
+      this.processImageWithWorker(
         savedTask._id?.toString() || "",
         request.imagePath
       );
@@ -87,21 +89,85 @@ export class TaskService {
   }
 
   /**
-   * Processa a imagem de forma assíncrona
+   * Processa a imagem usando Worker Thread
    */
-  private static async processImageAsync(
+  private static processImageWithWorker(
     taskId: string,
     imagePath: string
+  ): void {
+    try {
+      Logger.info("Starting image processing with worker thread", { taskId });
+
+      // Cria o worker thread
+      const workerPath = path.join(
+        __dirname,
+        "../workers/imageProcessorWorker.js"
+      );
+      const worker = new Worker(workerPath, {
+        workerData: {
+          taskId,
+          imagePath,
+          outputDir: config.outputDir,
+        },
+      });
+
+      // Escuta mensagens do worker
+      worker.on("message", async (result) => {
+        try {
+          if (result.status === "completed") {
+            await this.handleWorkerSuccess(taskId, result.images, imagePath);
+          } else if (result.status === "failed") {
+            await this.handleWorkerError(taskId, result.error);
+          }
+        } catch (error) {
+          Logger.error("Error handling worker result", {
+            taskId,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+        } finally {
+          // Termina o worker
+          worker.terminate();
+        }
+      });
+
+      // Escuta erros do worker
+      worker.on("error", async (error) => {
+        Logger.error("Worker thread error", {
+          taskId,
+          error: error.message,
+        });
+        await this.handleWorkerError(taskId, error.message);
+        worker.terminate();
+      });
+
+      // Escuta quando o worker termina
+      worker.on("exit", (code) => {
+        if (code !== 0) {
+          Logger.warn("Worker thread exited with code", { taskId, code });
+        }
+      });
+    } catch (error) {
+      Logger.error("Error creating worker thread", {
+        taskId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+      // Fallback: marca como falhada
+      this.handleWorkerError(
+        taskId,
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+
+  /**
+   * Manipula sucesso do worker
+   */
+  private static async handleWorkerSuccess(
+    taskId: string,
+    processedImages: any[],
+    originalImagePath: string
   ): Promise<void> {
     try {
-      Logger.info("Starting image processing", { taskId });
-
-      // Processa a imagem
-      const processedImages = await ImageProcessor.processImage(
-        imagePath,
-        config.outputDir
-      );
-
       // Atualiza a tarefa com as imagens processadas
       await TaskModel.findByIdAndUpdate(taskId, {
         status: "completed" as TaskStatusType,
@@ -119,27 +185,47 @@ export class TaskService {
         path: img.path,
         resolution: img.resolution,
         md5: img.md5,
-        originalPath: imagePath,
+        originalPath: originalImagePath,
         taskId: new mongoose.Types.ObjectId(taskId),
       }));
 
       await ImageModel.insertMany(imageDocuments);
 
-      Logger.info("Image processing completed", {
+      Logger.info("Image processing completed via worker", {
         taskId,
         imagesCount: processedImages.length,
       });
     } catch (error) {
-      Logger.error("Error processing image", {
+      Logger.error("Error handling worker success", {
         taskId,
         error: error instanceof Error ? error.message : "Unknown error",
       });
+      throw error;
+    }
+  }
 
-      // Marca a tarefa como falhada
+  /**
+   * Manipula erro do worker
+   */
+  private static async handleWorkerError(
+    taskId: string,
+    errorMessage: string
+  ): Promise<void> {
+    try {
       await TaskModel.findByIdAndUpdate(taskId, {
         status: "failed" as TaskStatusType,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: errorMessage,
         updatedAt: new Date(),
+      });
+
+      Logger.error("Image processing failed via worker", {
+        taskId,
+        error: errorMessage,
+      });
+    } catch (error) {
+      Logger.error("Error handling worker error", {
+        taskId,
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
