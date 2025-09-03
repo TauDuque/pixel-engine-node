@@ -96,7 +96,11 @@ export class TaskService {
     imagePath: string
   ): void {
     try {
-      Logger.info("Starting image processing with worker thread", { taskId });
+      Logger.info("Starting image processing with worker thread", {
+        taskId,
+        imagePath,
+        outputDir: config.outputDir,
+      });
 
       // Cria o worker thread
       const workerPath = path.join(
@@ -114,6 +118,12 @@ export class TaskService {
       // Escuta mensagens do worker
       worker.on("message", async (result) => {
         try {
+          Logger.info("Received worker message", {
+            taskId,
+            status: result.status,
+            processingTimeMs: result.processingTimeMs,
+          });
+
           if (result.status === "completed") {
             await this.handleWorkerSuccess(taskId, result.images, imagePath);
           } else if (result.status === "failed") {
@@ -135,6 +145,7 @@ export class TaskService {
         Logger.error("Worker thread error", {
           taskId,
           error: error.message,
+          stack: error.stack,
         });
         await this.handleWorkerError(taskId, error.message);
         worker.terminate();
@@ -143,13 +154,19 @@ export class TaskService {
       // Escuta quando o worker termina
       worker.on("exit", (code) => {
         if (code !== 0) {
-          Logger.warn("Worker thread exited with code", { taskId, code });
+          Logger.warn("Worker thread exited with non-zero code", {
+            taskId,
+            exitCode: code,
+          });
+        } else {
+          Logger.info("Worker thread completed successfully", { taskId });
         }
       });
     } catch (error) {
       Logger.error("Error creating worker thread", {
         taskId,
         error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
       });
       // Fallback: marca como falhada
       this.handleWorkerError(
