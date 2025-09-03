@@ -53,6 +53,53 @@ describe("Task Integration Tests", () => {
       expect(response.body.data.price).toBeLessThanOrEqual(50);
     });
 
+    it("should process image asynchronously and update task status", async () => {
+      const testImagePath = path.join(__dirname, "../fixtures/more.png");
+
+      // Ensure test image exists
+      if (!(await fs.pathExists(testImagePath))) {
+        throw new Error(`Test image not found: ${testImagePath}`);
+      }
+
+      // Create task
+      const createResponse = await request(app.getApp())
+        .post("/api/tasks")
+        .send({ imagePath: testImagePath })
+        .expect(201);
+
+      const taskId = createResponse.body.data.taskId;
+
+      // Wait for async processing to complete (max 10 seconds)
+      let taskResponse;
+      let attempts = 0;
+      const maxAttempts = 20; // 20 attempts * 500ms = 10 seconds max
+
+      do {
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms
+        taskResponse = await request(app.getApp())
+          .get(`/api/tasks/${taskId}`)
+          .expect(200);
+        attempts++;
+      } while (
+        taskResponse.body.data.status === "pending" &&
+        attempts < maxAttempts
+      );
+
+      // Assert final status
+      expect(taskResponse.body.data.status).toBe("completed");
+      expect(taskResponse.body.data).toHaveProperty("images");
+      expect(Array.isArray(taskResponse.body.data.images)).toBe(true);
+      expect(taskResponse.body.data.images.length).toBeGreaterThan(0);
+
+      // Check image structure
+      taskResponse.body.data.images.forEach((image: any) => {
+        expect(image).toHaveProperty("resolution");
+        expect(image).toHaveProperty("path");
+        expect(image).toHaveProperty("md5");
+        expect(image).toHaveProperty("createdAt");
+      });
+    }, 15000); // Increase timeout to 15 seconds for async processing
+
     it("should return 400 for missing imagePath", async () => {
       const response = await request(app.getApp())
         .post("/api/tasks")

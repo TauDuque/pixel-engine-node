@@ -16,5 +16,5 @@ module.exports = {
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov", "html"],
   setupFilesAfterEnv: ["<rootDir>/src/tests/setup.ts"],
-  testTimeout: 10000,
+  testTimeout: 20000, // Increased for async worker thread processing
 };
