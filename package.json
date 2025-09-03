@@ -11,7 +11,10 @@
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
         "lint": "eslint src/**/*.ts",
-        "lint:fix": "eslint src/**/*.ts --fix"
+        "lint:fix": "eslint src/**/*.ts --fix",
+        "db:init": "npm run build && node scripts/init-database.js",
+        "db:clear": "npm run build && node -e \"require('./dist/config/database').Database.getInstance().clearDatabase().then(() => process.exit(0))\"",
+        "setup": "node scripts/setup-env.js"
     },
     "keywords": [
         "api",
