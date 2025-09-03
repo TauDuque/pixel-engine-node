@@ -108,3 +108,6 @@ temp/
 
 # Database
 data/
+
+# Development files
+TODO.md
