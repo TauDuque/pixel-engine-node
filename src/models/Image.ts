@@ -15,7 +15,6 @@ const ImageSchema = new Schema<ImageDocument>(
     path: {
       type: String,
       required: true,
-      unique: true,
     },
     resolution: {
       type: String,
