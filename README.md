@@ -6,21 +6,33 @@ A high-performance REST API for image processing and task management, built with
 
 This API provides:
 
-- Image processing task creation and management
-- Automatic generation of image variants in specific resolutions (1024px and 800px)
-- Task status tracking and result retrieval
-- Dynamic pricing system for processing tasks
+- **Asynchronous image processing** using Worker Threads for optimal performance
+- **Task creation and management** with real-time status tracking
+- **Automatic generation** of image variants in specific resolutions (1024px and 800px)
+- **Dynamic pricing system** for processing tasks (5-50 units)
+- **Enhanced API responses** with comprehensive feedback for developers
+- **Robust error handling** and validation
 
 ## Architecture
 
 The project follows **Hexagonal Architecture** (Ports and Adapters) with the following layers:
 
 - **Controllers**: Handle HTTP requests and responses
-- **Services**: Contain business logic
-- **Models**: Define MongoDB schemas
+- **Services**: Contain business logic and coordinate Worker Threads
+- **Models**: Define MongoDB schemas with optimized indexes
 - **Utils**: Helper functions (image processing, logging)
+- **Workers**: Background processing using Node.js Worker Threads
 - **Middleware**: Validation, error handling
 - **Config**: Database configuration, environment, Swagger
+
+### Asynchronous Processing
+
+The API uses **Node.js Worker Threads** for image processing to ensure:
+
+- **Non-blocking operations**: Main thread remains responsive
+- **Scalability**: Multiple images can be processed concurrently
+- **Error isolation**: Worker failures don't affect the main application
+- **Performance**: CPU-intensive tasks run in separate threads
 
 ## Technologies
 
@@ -28,6 +40,7 @@ The project follows **Hexagonal Architecture** (Ports and Adapters) with the fol
 - **Express.js** as web framework
 - **MongoDB** with **Mongoose** for persistence
 - **Sharp** for image processing
+- **Worker Threads** for asynchronous processing
 - **Swagger/OpenAPI** for documentation
 - **Jest** for testing
 - **ESLint** for code quality
@@ -118,6 +131,28 @@ npm run lint:fix
 
 ## API Endpoints
 
+### Enhanced Response Format
+
+The API uses an enhanced response format that provides comprehensive feedback:
+
+```json
+{
+  "success": true,
+  "data": {
+    /* actual response data */
+  },
+  "message": "Descriptive message about the operation"
+}
+```
+
+This format offers several advantages:
+
+- **Clear success indication**: `success` field immediately shows operation status
+- **Structured data**: `data` field contains the actual response payload
+- **Contextual messages**: `message` field provides additional information
+- **Consistent error handling**: Failed operations follow the same structure
+- **Developer-friendly**: Easy to parse and handle in client applications
+
 ### Create Task
 
 ```http
@@ -183,6 +218,40 @@ GET /api/tasks/{taskId}
 GET /health
 ```
 
+## Database Utilities
+
+The project includes utility scripts for database management:
+
+### Initialize Database with Sample Data
+
+```bash
+npm run db:init
+```
+
+This script:
+
+- Connects to MongoDB
+- Clears existing data
+- Creates sample tasks with different statuses (completed, pending, failed)
+- Creates sample images with proper relationships
+- Provides task IDs for testing
+
+### Clear Database
+
+```bash
+npm run db:clear
+```
+
+Removes all data from the database (useful for testing).
+
+### Environment Setup
+
+```bash
+npm run setup
+```
+
+Creates a `.env` file based on `env.example` for easy configuration.
+
 ## Documentation
 
 Complete API documentation is available at:
@@ -203,7 +272,12 @@ src/
 ├── tests/           # Unit and integration tests
 ├── types/           # TypeScript type definitions
 ├── utils/           # Utilities (image processing, logging)
+├── workers/         # Worker Threads for background processing
 └── index.ts         # Application entry point
+
+scripts/
+├── init-database.js # Database initialization script
+└── setup-env.js     # Environment setup script
 ```
 
 ## Database
@@ -268,33 +342,58 @@ The project includes:
 - **Integration tests**: For endpoints and complete flows
 - **Coverage**: Code coverage reporting
 
+### Manual Testing
+
+You can test the API manually using the provided sample data:
+
+1. **Initialize sample data**:
+
+   ```bash
+   npm run db:init
+   ```
+
+2. **Test with sample task IDs**:
+
+   - Completed: `507f1f77bcf86cd799439011`
+   - Pending: `507f1f77bcf86cd799439012`
+   - Failed: `507f1f77bcf86cd799439013`
+
+3. **Create a new task**:
+
+   ```bash
+   curl -X POST http://localhost:3000/api/tasks \
+     -H "Content-Type: application/json" \
+     -d '{"imagePath": "src/tests/fixtures/more.png"}'
+   ```
+
+4. **Check task status**:
+   ```bash
+   curl http://localhost:3000/api/tasks/{taskId}
+   ```
+
 ## Design Decisions
 
+### Architecture & Performance
+
 1. **Hexagonal Architecture**: Clear separation of concerns and testability
-2. **Asynchronous Processing**: Images are processed in the background
-3. **Robust Validation**: Input validation and error handling
-4. **API-First Documentation**: Swagger/OpenAPI from the start
-5. **Database Optimization**: Indexes for efficient queries
-6. **Structured Logging**: For debugging and monitoring
+2. **Worker Threads**: Asynchronous image processing using Node.js Worker Threads for optimal performance
+3. **Non-blocking Operations**: Main thread remains responsive during image processing
+4. **Error Isolation**: Worker failures don't affect the main application
 
-## Roadmap
+### API Design
 
-- [ ] Implement authentication/authorization
-- [ ] Add rate limiting
-- [ ] Implement Redis caching
-- [ ] Add metrics and monitoring
-- [ ] Implement CI/CD pipeline
-- [ ] Add more image formats
-- [ ] Implement batch processing
+5. **Enhanced Response Format**: Structured responses with `success`, `data`, and `message` fields for better developer experience
+6. **Consistent Error Handling**: All errors follow the same response structure
+7. **API-First Documentation**: Swagger/OpenAPI from the start
 
-## Contributing
+### Data & Validation
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+8. **Robust Validation**: Input validation and error handling
+9. **Database Optimization**: Indexes for efficient queries
+10. **Structured Logging**: For debugging and monitoring
 
-## License
+### Developer Experience
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+11. **Utility Scripts**: Database initialization and environment setup scripts
+12. **Comprehensive Testing**: Unit and integration tests with coverage
+13. **TypeScript**: Type safety and better development experience
