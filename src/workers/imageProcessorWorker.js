@@ -1,6 +1,8 @@
 const { parentPort, workerData } = require("worker_threads");
-const { ImageProcessor } = require("../utils/imageProcessor");
 const path = require("path");
+
+// Import ImageProcessor - use src path for development, dist for production
+const { ImageProcessor } = require("../utils/imageProcessor");
 
 /**
  * Worker thread for processing images in the background

@@ -31,11 +31,15 @@ jest.mock("../../utils/logger", () => ({
 
 // Mock models
 jest.mock("../../models/Task", () => ({
-  TaskModel: {
-    findById: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
-  },
+  TaskModel: jest.fn().mockImplementation(() => ({
+    save: jest.fn(),
+  })),
 }));
+
+// Add static methods to TaskModel mock
+const mockTaskModel = require("../../models/Task").TaskModel;
+mockTaskModel.findById = jest.fn();
+mockTaskModel.findByIdAndUpdate = jest.fn();
 
 jest.mock("../../models/Image", () => ({
   ImageModel: {
@@ -51,7 +55,7 @@ describe("TaskService Unit Tests", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (Worker as jest.Mock).mockImplementation(() => mockWorker);
+    (Worker as unknown as jest.Mock).mockImplementation(() => mockWorker);
   });
 
   describe("createTask", () => {
@@ -71,7 +75,7 @@ describe("TaskService Unit Tests", () => {
 
       (ImageProcessor.validateImage as jest.Mock).mockResolvedValue(true);
       (ImageProcessor.generateRandomPrice as jest.Mock).mockReturnValue(25.5);
-      (TaskModel as any).mockImplementation(() => mockTask);
+      (TaskModel as unknown as jest.Mock).mockImplementation(() => mockTask);
 
       // Act
       const result = await TaskService.createTask({
@@ -138,8 +142,8 @@ describe("TaskService Unit Tests", () => {
 
       (ImageProcessor.validateImage as jest.Mock).mockResolvedValue(true);
       (ImageProcessor.generateRandomPrice as jest.Mock).mockReturnValue(25.5);
-      (TaskModel as any).mockImplementation(() => mockTask);
-      (Worker as jest.Mock).mockImplementation(() => {
+      (TaskModel as unknown as jest.Mock).mockImplementation(() => mockTask);
+      (Worker as unknown as jest.Mock).mockImplementation(() => {
         throw new Error("Worker creation failed");
       });
 
@@ -242,7 +246,7 @@ describe("TaskService Unit Tests", () => {
 
       (ImageProcessor.validateImage as jest.Mock).mockResolvedValue(true);
       (ImageProcessor.generateRandomPrice as jest.Mock).mockReturnValue(25.5);
-      (TaskModel as any).mockImplementation(() => mockTask);
+      (TaskModel as unknown as jest.Mock).mockImplementation(() => mockTask);
       (TaskModel.findByIdAndUpdate as jest.Mock).mockResolvedValue({});
       (ImageModel.insertMany as jest.Mock).mockResolvedValue({});
 
@@ -307,7 +311,7 @@ describe("TaskService Unit Tests", () => {
 
       (ImageProcessor.validateImage as jest.Mock).mockResolvedValue(true);
       (ImageProcessor.generateRandomPrice as jest.Mock).mockReturnValue(25.5);
-      (TaskModel as any).mockImplementation(() => mockTask);
+      (TaskModel as unknown as jest.Mock).mockImplementation(() => mockTask);
       (TaskModel.findByIdAndUpdate as jest.Mock).mockResolvedValue({});
 
       // Act
