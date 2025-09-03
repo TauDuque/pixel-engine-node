@@ -4,23 +4,20 @@ import path from "path";
 
 describe("ImageProcessor Unit Tests", () => {
   const testDir = path.join(__dirname, "../fixtures");
-  const testImagePath = path.join(testDir, "test-image.jpg");
+  const testImagePath = path.join(testDir, "more.png");
 
   beforeAll(async () => {
-    // Create test directory and image
+    // Create test directory if it doesn't exist
     await fs.ensureDir(testDir);
-
-    // Create a minimal valid JPEG file for testing
-    const jpegHeader = Buffer.from([
-      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
-      0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00, 0x00, 0xff, 0xd9,
-    ]);
-    await fs.writeFile(testImagePath, jpegHeader);
   });
 
   afterAll(async () => {
-    // Clean up test files
-    await fs.remove(testDir);
+    // Clean up test files (but keep the fixtures directory)
+    // Only remove temporary files created during tests
+    const outputDir = path.join(testDir, "output");
+    if (await fs.pathExists(outputDir)) {
+      await fs.remove(outputDir);
+    }
   });
 
   describe("generateRandomPrice", () => {
