@@ -116,6 +116,10 @@ class App {
       });
     }
   }
+
+  public getApp(): express.Application {
+    return this.app;
+  }
 }
 
 // Handle graceful shutdown
