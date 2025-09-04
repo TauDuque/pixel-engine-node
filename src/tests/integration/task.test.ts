@@ -111,7 +111,9 @@ describe("Task Integration Tests", () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe("Validation Error");
-      expect(response.body.message).toBe("Image path is required");
+      expect(response.body.message).toBe(
+        "Either imagePath (JSON) or file upload (multipart) is required"
+      );
     });
 
     it("should return 400 for invalid imagePath type", async () => {
@@ -125,11 +127,11 @@ describe("Task Integration Tests", () => {
       expect(response.body.message).toBe("Image path must be a string");
     });
 
-    it("should return 500 for non-existent image file", async () => {
+    it("should return 400 for non-existent image file", async () => {
       const response = await request(app.getApp())
         .post("/api/tasks")
         .send({ imagePath: "/non/existent/image.jpg" })
-        .expect(500);
+        .expect(400);
 
       expect(response.body.success).toBe(false);
       expect(response.body.message).toBe("Failed to create task");
