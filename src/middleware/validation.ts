@@ -8,36 +8,45 @@ export class ValidationMiddleware {
     res: Response,
     next: NextFunction
   ): void | Response {
-    const { imagePath } = req.body;
+    // Verifica se é upload de arquivo (multipart) ou JSON
+    const hasFile =
+      req.files && Array.isArray(req.files) && req.files.length > 0;
+    const hasImagePath = req.body && req.body.imagePath;
 
-    if (!imagePath) {
+    if (!hasFile && !hasImagePath) {
       const response: ErrorResponse = {
         success: false,
         error: "Validation Error",
-        message: "Image path is required",
+        message:
+          "Either imagePath (JSON) or file upload (multipart) is required",
         statusCode: 400,
       };
       return res.status(400).json(response);
     }
 
-    if (typeof imagePath !== "string") {
-      const response: ErrorResponse = {
-        success: false,
-        error: "Validation Error",
-        message: "Image path must be a string",
-        statusCode: 400,
-      };
-      return res.status(400).json(response);
-    }
+    // Se é JSON, valida o imagePath
+    if (hasImagePath && !hasFile) {
+      const { imagePath } = req.body;
 
-    if (imagePath.length < 1 || imagePath.length > 500) {
-      const response: ErrorResponse = {
-        success: false,
-        error: "Validation Error",
-        message: "Image path must be between 1 and 500 characters",
-        statusCode: 400,
-      };
-      return res.status(400).json(response);
+      if (typeof imagePath !== "string") {
+        const response: ErrorResponse = {
+          success: false,
+          error: "Validation Error",
+          message: "Image path must be a string",
+          statusCode: 400,
+        };
+        return res.status(400).json(response);
+      }
+
+      if (imagePath.length < 1 || imagePath.length > 500) {
+        const response: ErrorResponse = {
+          success: false,
+          error: "Validation Error",
+          message: "Image path must be between 1 and 500 characters",
+          statusCode: 400,
+        };
+        return res.status(400).json(response);
+      }
     }
 
     next();
