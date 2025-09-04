@@ -10,6 +10,7 @@ This API provides:
 - **Task creation and management** with real-time status tracking
 - **Automatic generation** of image variants in specific resolutions (1024px and 800px)
 - **Dynamic pricing system** for processing tasks (5-50 units)
+- **Duplicate image prevention** to avoid unnecessary reprocessing
 - **Enhanced API responses** with comprehensive feedback for developers
 - **Robust error handling** and validation
 
@@ -175,6 +176,30 @@ Content-Type: application/json
     "price": 25.5
   },
   "message": "Task created successfully"
+}
+```
+
+**Validation Features:**
+
+- **Duplicate Image Prevention**: The API prevents processing the same image multiple times
+- **File Format Validation**: Only supported formats (jpg, jpeg, png, webp) are accepted
+- **File Existence Check**: Validates that the image file exists and is accessible
+
+**Error Responses:**
+
+```json
+{
+  "success": false,
+  "error": "Image has already been processed. Please use a different image.",
+  "message": "Failed to create task"
+}
+```
+
+```json
+{
+  "success": false,
+  "error": "Invalid image file or format not supported",
+  "message": "Failed to create task"
 }
 ```
 
