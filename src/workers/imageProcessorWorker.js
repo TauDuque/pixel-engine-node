@@ -18,7 +18,7 @@ async function processImage() {
   const startTime = Date.now();
 
   try {
-    const { taskId, imagePath, outputDir } = workerData;
+    const { taskId, imagePath, originalPath, outputDir } = workerData;
 
     // Validate input data
     if (!taskId || !imagePath) {
@@ -38,7 +38,13 @@ async function processImage() {
     }
 
     // Process the image using the existing ImageProcessor
-    const images = await ImageProcessor.processImage(imagePath, finalOutputDir);
+    // Use originalPath for generating output paths, but imagePath for actual processing
+    const images = await ImageProcessor.processImage(
+      imagePath,
+      finalOutputDir,
+      undefined,
+      originalPath
+    );
 
     const processingTime = Date.now() - startTime;
     console.log(

@@ -11,7 +11,8 @@ export class ImageProcessor {
   public static async processImage(
     inputPath: string,
     outputBasePath: string,
-    resolutions: number[] = config.resolutions
+    resolutions: number[] = config.resolutions,
+    originalName?: string
   ): Promise<Array<{ resolution: string; path: string; md5: string }>> {
     try {
       // Verifica se o arquivo de entrada existe
@@ -33,8 +34,8 @@ export class ImageProcessor {
       }
 
       // Cria o diretório base de saída
-      const originalName = path.parse(inputPath).name;
-      const cleanName = originalName.replace(/\s+/g, "_"); // Remove espaços
+      const baseName = originalName || path.parse(inputPath).name;
+      const cleanName = baseName.replace(/\s+/g, "_"); // Remove espaços
       const outputDir = path.join(outputBasePath, cleanName);
       await fs.ensureDir(outputDir);
 
