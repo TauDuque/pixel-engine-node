@@ -97,6 +97,9 @@ describe("Task Integration Tests", () => {
         expect(image).toHaveProperty("path");
         expect(image).toHaveProperty("md5");
         expect(image).toHaveProperty("createdAt");
+
+        // Check path format: /output/{name}/{resolution}/{md5}.jpg
+        expect(image.path).toMatch(/^\/output\/[^/]+\/\d+\/[a-f0-9]+\.jpg$/);
       });
     }, 15000); // Increase timeout to 15 seconds for async processing
 

@@ -89,11 +89,19 @@ describe("ImageProcessor Unit Tests", () => {
         expect(typeof result.resolution).toBe("string");
         expect(typeof result.path).toBe("string");
         expect(typeof result.md5).toBe("string");
+
+        // Check path format: /output/{name}/{resolution}/{md5}.jpg
+        expect(result.path).toMatch(/^\/output\/[^/]+\/\d+\/[a-f0-9]+\.jpg$/);
       });
 
-      // Check that files were actually created
+      // Check that files were actually created (using physical path)
       for (const result of results) {
-        expect(await fs.pathExists(result.path)).toBe(true);
+        // Convert the returned path to physical path for file existence check
+        const physicalPath = result.path
+          .replace(/^\//, "")
+          .replace(/\//g, path.sep);
+        const fullPhysicalPath = path.join(process.cwd(), physicalPath);
+        expect(await fs.pathExists(fullPhysicalPath)).toBe(true);
       }
     });
 

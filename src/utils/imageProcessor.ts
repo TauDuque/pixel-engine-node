@@ -34,7 +34,8 @@ export class ImageProcessor {
 
       // Cria o diretório base de saída
       const originalName = path.parse(inputPath).name;
-      const outputDir = path.join(outputBasePath, originalName);
+      const cleanName = originalName.replace(/\s+/g, "_"); // Remove espaços
+      const outputDir = path.join(outputBasePath, cleanName);
       await fs.ensureDir(outputDir);
 
       const results: Array<{ resolution: string; path: string; md5: string }> =
@@ -59,10 +60,13 @@ export class ImageProcessor {
           .createHash("md5")
           .update(resizedBuffer)
           .digest("hex");
-        const outputPath = path.join(resolutionDir, `${md5}.jpg`);
+
+        // Gera o path no formato correto: /output/{nome}/{resolucao}/{md5}.{ext}
+        const outputPath = `/output/${cleanName}/${resolution}/${md5}.jpg`;
+        const physicalPath = path.join(resolutionDir, `${md5}.jpg`);
 
         // Salva o arquivo
-        await fs.writeFile(outputPath, resizedBuffer);
+        await fs.writeFile(physicalPath, resizedBuffer);
 
         results.push({
           resolution: resolution.toString(),
