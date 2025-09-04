@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { TaskController } from "../controllers/TaskController";
 import { ValidationMiddleware } from "../middleware/validation";
+import { uploadSingle } from "../middleware/upload";
 
 const router = Router();
 
@@ -110,6 +111,14 @@ const router = Router();
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/CreateTaskRequest'
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file to process
  *     responses:
  *       201:
  *         description: Task created successfully
@@ -137,6 +146,7 @@ const router = Router();
  */
 router.post(
   "/",
+  uploadSingle, // Middleware para upload de arquivo (opcional)
   ValidationMiddleware.validateCreateTask,
   TaskController.createTask
 );

@@ -26,6 +26,8 @@ export interface Task {
 
 export interface CreateTaskRequest {
   imagePath: string;
+  uploadType?: "json" | "multipart";
+  originalFileName?: string;
 }
 
 export interface CreateTaskResponse {
