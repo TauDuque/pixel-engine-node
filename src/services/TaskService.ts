@@ -29,6 +29,17 @@ export class TaskService {
         throw new Error("Invalid image file or format not supported");
       }
 
+      // Verifica se a imagem já foi processada anteriormente
+      const existingImage = await ImageModel.findOne({
+        originalPath: request.imagePath,
+      });
+
+      if (existingImage) {
+        throw new Error(
+          "Image has already been processed. Please use a different image."
+        );
+      }
+
       // Gera preço aleatório
       const price = ImageProcessor.generateRandomPrice();
 

@@ -45,5 +45,6 @@ ImageSchema.index({ taskId: 1 });
 ImageSchema.index({ md5: 1 });
 ImageSchema.index({ path: 1 });
 ImageSchema.index({ resolution: 1 });
+ImageSchema.index({ originalPath: 1 }); // Para validação de duplicatas
 
 export const ImageModel = mongoose.model<ImageDocument>("Image", ImageSchema);

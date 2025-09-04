@@ -25,13 +25,20 @@ export class TaskController {
         error: error instanceof Error ? error.message : "Unknown error",
       });
 
+      // Determine appropriate status code based on error type
+      const isValidationError =
+        error instanceof Error &&
+        (error.message.includes("already been processed") ||
+          error.message.includes("Invalid image file"));
+      const statusCode = isValidationError ? 400 : 500;
+
       const response: ApiResponse = {
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
         message: "Failed to create task",
       };
 
-      res.status(500).json(response);
+      res.status(statusCode).json(response);
     }
   }
 
