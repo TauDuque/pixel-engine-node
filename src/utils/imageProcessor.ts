@@ -61,16 +61,16 @@ export class ImageProcessor {
           .update(resizedBuffer)
           .digest("hex");
 
-        // Gera o path no formato correto: /output/{nome}/{resolucao}/{md5}.{ext}
-        const outputPath = `/output/${cleanName}/${resolution}/${md5}.jpg`;
+        // Salva o arquivo (path físico)
         const physicalPath = path.join(resolutionDir, `${md5}.jpg`);
-
-        // Salva o arquivo
         await fs.writeFile(physicalPath, resizedBuffer);
+
+        // Gera o path no formato correto para retorno
+        const returnPath = `/output/${cleanName}/${resolution}/${md5}.jpg`;
 
         results.push({
           resolution: resolution.toString(),
-          path: outputPath,
+          path: returnPath, // Retorna path no formato Unix
           md5,
         });
       }
