@@ -16,11 +16,11 @@ export class ErrorHandler {
       method: req.method,
     });
 
-    const statusCode = this.getStatusCode(error);
+    const statusCode = ErrorHandler.getStatusCode(error);
     const response: ErrorResponse = {
       success: false,
       error: error.message,
-      message: this.getErrorMessage(error),
+      message: ErrorHandler.getErrorMessage(error),
       statusCode,
     };
 
@@ -38,16 +38,35 @@ export class ErrorHandler {
     res.status(404).json(response);
   }
 
-  private static getStatusCode(error: Error): number {
+  private static getStatusCode(error: any): number {
+    // Multer errors
+    if (error.code === "LIMIT_FILE_SIZE") return 400;
+    if (error.code === "LIMIT_UNEXPECTED_FILE") return 400;
+    if (error.message && error.message.includes("Invalid file type"))
+      return 400;
+
+    // Standard errors
     if (error.name === "ValidationError") return 400;
     if (error.name === "CastError") return 400;
-    if (error.message.includes("not found")) return 404;
-    if (error.message.includes("unauthorized")) return 401;
-    if (error.message.includes("forbidden")) return 403;
+    if (error.message && error.message.includes("not found")) return 404;
+    if (error.message && error.message.includes("unauthorized")) return 401;
+    if (error.message && error.message.includes("forbidden")) return 403;
     return 500;
   }
 
-  private static getErrorMessage(error: Error): string {
+  private static getErrorMessage(error: any): string {
+    // Multer errors
+    if (error.code === "LIMIT_FILE_SIZE") {
+      return "File too large. Maximum size is 10MB";
+    }
+    if (error.code === "LIMIT_UNEXPECTED_FILE") {
+      return "Unexpected file field";
+    }
+    if (error.message && error.message.includes("Invalid file type")) {
+      return "Invalid file type. Only JPEG, PNG, and WebP images are allowed";
+    }
+
+    // Standard errors
     if (error.name === "ValidationError") {
       return "Validation error";
     }
