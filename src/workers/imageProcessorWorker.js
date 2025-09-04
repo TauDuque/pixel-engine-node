@@ -1,8 +1,14 @@
 const { parentPort, workerData } = require("worker_threads");
 const path = require("path");
 
-// Import ImageProcessor - use src path for development, dist for production
-const { ImageProcessor } = require("../utils/imageProcessor");
+// Import ImageProcessor - usa variável de ambiente para determinar o caminho
+const isProduction =
+  process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
+const imageProcessorPath = isProduction
+  ? path.resolve(__dirname, "../../dist/utils/imageProcessor")
+  : path.resolve(__dirname, "../utils/imageProcessor");
+
+const { ImageProcessor } = require(imageProcessorPath);
 
 /**
  * Worker thread for processing images in the background
