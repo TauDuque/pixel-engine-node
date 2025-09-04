@@ -44,6 +44,7 @@ mockTaskModel.findByIdAndUpdate = jest.fn();
 jest.mock("../../models/Image", () => ({
   ImageModel: {
     insertMany: jest.fn(),
+    findOne: jest.fn(), // Adicionado para validação de duplicata
   },
 }));
 
