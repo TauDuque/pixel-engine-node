@@ -16,8 +16,8 @@ export const config = {
     process.env.MONGODB_TEST_URI ||
     "mongodb://localhost:27017/pixel-engine-test",
 
-  // File Upload
-  uploadDir: process.env.UPLOAD_DIR || "uploads",
+  // File Upload (não mais usado - arquivos salvos diretamente em output/)
+  // uploadDir: process.env.UPLOAD_DIR || "uploads",
   outputDir: process.env.OUTPUT_DIR || "output",
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || "10485760", 10), // 10MB
 
