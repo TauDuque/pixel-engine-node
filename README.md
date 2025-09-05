@@ -2,6 +2,8 @@
 
 A high-performance REST API for image processing and task management, built with Node.js and TypeScript.
 
+**Repository**: [pixel-engine-node](https://github.com/TauDuque/pixel-engine-node.git)
+
 ## Overview
 
 This API provides:
@@ -51,8 +53,8 @@ The API uses **Node.js Worker Threads** for image processing to ensure:
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
-cd pixel-engine
+git clone https://github.com/TauDuque/pixel-engine-node.git
+cd pixel-engine-node
 ```
 
 2. Install dependencies:
@@ -280,7 +282,7 @@ GET /api/tasks/{taskId}
 ### Health Check
 
 ```http
-GET /health
+GET /api/health
 ```
 
 ## Database Utilities
@@ -473,3 +475,20 @@ You can test the API manually using the provided sample data:
 13. **Utility Scripts**: Database initialization and environment setup scripts
 14. **Comprehensive Testing**: Unit and integration tests with coverage
 15. **TypeScript**: Type safety and better development experience
+
+## About
+
+This project is a technical test implementation demonstrating:
+
+- **Professional Node.js/TypeScript development** with best practices
+- **RESTful API design** with comprehensive documentation
+- **Asynchronous processing** using Worker Threads
+- **Database optimization** with MongoDB indexing
+- **Comprehensive testing** with unit and integration tests
+- **Clean architecture** following Hexagonal Architecture principles
+
+**Repository**: [pixel-engine-node](https://github.com/TauDuque/pixel-engine-node.git)
+
+**Technologies**: Node.js, TypeScript, Express.js, MongoDB, Sharp, Worker Threads, Swagger/OpenAPI, Jest
+
+**License**: This project is part of a technical assessment and is not intended for commercial use.
