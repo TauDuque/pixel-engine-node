@@ -8,6 +8,7 @@ import { swaggerSpec } from "./config/swagger";
 import { ErrorHandler } from "./middleware/errorHandler";
 import { Logger } from "./utils/logger";
 import taskRoutes from "./routes/taskRoutes";
+import healthRoutes from "./routes/healthRoutes";
 
 class App {
   private app: express.Application;
@@ -41,18 +42,9 @@ class App {
   }
 
   private setupRoutes(): void {
-    // Health check endpoint
-    this.app.get("/health", (req, res) => {
-      res.json({
-        success: true,
-        message: "Pixel Engine API is running",
-        timestamp: new Date().toISOString(),
-        version: "1.0.0",
-      });
-    });
-
     // API routes
     this.app.use(`${config.apiPrefix}/tasks`, taskRoutes);
+    this.app.use(`${config.apiPrefix}/health`, healthRoutes);
 
     // Swagger documentation
     this.app.use(
@@ -71,7 +63,7 @@ class App {
         success: true,
         message: "Welcome to Pixel Engine API",
         documentation: "/api-docs",
-        health: "/health",
+        health: "/api/health",
         version: "1.0.0",
       });
     });
@@ -96,7 +88,7 @@ class App {
         Logger.info(
           `API Documentation: http://localhost:${config.port}/api-docs`
         );
-        Logger.info(`Health Check: http://localhost:${config.port}/health`);
+        Logger.info(`Health Check: http://localhost:${config.port}/api/health`);
       });
     } catch (error) {
       Logger.error("Failed to start server", {
