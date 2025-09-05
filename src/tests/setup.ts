@@ -14,7 +14,11 @@ beforeAll(async () => {
 afterAll(async () => {
   // Clean up test database and disconnect
   const database = Database.getInstance();
-  await database.clearDatabase();
+  try {
+    await database.clearDatabase();
+  } catch (error) {
+    // Ignore errors if database is already disconnected
+  }
   await database.disconnect();
 });
 
