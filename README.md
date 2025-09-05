@@ -18,7 +18,7 @@ This API provides:
 
 ## Architecture
 
-The project follows **Hexagonal Architecture** (Ports and Adapters) with the following layers:
+The project was designed with **Hexagonal Architecture principles** in mind, implementing a **layered architecture** with clear separation of concerns:
 
 - **Controllers**: Handle HTTP requests and responses
 - **Services**: Contain business logic and coordinate Worker Threads
@@ -27,6 +27,22 @@ The project follows **Hexagonal Architecture** (Ports and Adapters) with the fol
 - **Workers**: Background processing using Node.js Worker Threads
 - **Middleware**: Validation, error handling
 - **Config**: Database configuration, environment, Swagger
+
+### Architectural Approach
+
+While the project was designed with **Hexagonal Architecture principles** in mind, the implementation follows a **pragmatic layered architecture** approach. This decision was made to:
+
+- **Prioritize functionality** and meet all technical requirements
+- **Ensure maintainability** with clear separation of concerns
+- **Optimize development time** while maintaining code quality
+- **Focus on business value** rather than theoretical perfection
+
+The architecture successfully implements:
+
+- **Separation of concerns** between layers
+- **Clean interfaces** between components
+- **Testable code** with proper mocking strategies
+- **Scalable design** that can evolve toward full hexagonal implementation
 
 ### Asynchronous Processing
 
@@ -485,7 +501,7 @@ This project is a technical test implementation demonstrating:
 - **Asynchronous processing** using Worker Threads
 - **Database optimization** with MongoDB indexing
 - **Comprehensive testing** with unit and integration tests
-- **Clean architecture** following Hexagonal Architecture principles
+- **Clean architecture** following Hexagonal Architecture principles with layered design
 
 **Repository**: [pixel-engine-node](https://github.com/TauDuque/pixel-engine-node.git)
 
