@@ -191,7 +191,9 @@ describe("Task Integration Tests", () => {
 
   describe("Health Check", () => {
     it("should return health status", async () => {
-      const response = await request(app.getApp()).get("/health").expect(200);
+      const response = await request(app.getApp())
+        .get("/api/health")
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe("Pixel Engine API is running");
