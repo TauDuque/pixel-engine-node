@@ -51,18 +51,16 @@ export class TaskController {
         const nameWithoutExt = nameParts[0]; // "jeanne dark"
         const extension = nameParts[1]; // "jpg"
 
-        // Busca o match no path e remove tudo após o match
-        const matchIndex = imagePath.indexOf(nameWithoutExt);
+        // Busca o match no nome original e remove tudo após o match
+        const matchIndex = file.originalname.indexOf(nameWithoutExt);
         let originalPath: string;
         if (matchIndex !== -1) {
-          const pathWithoutTimestamp = imagePath.substring(
+          const pathWithoutTimestamp = file.originalname.substring(
             0,
             matchIndex + nameWithoutExt.length
           );
           originalPath = pathWithoutTimestamp + "." + extension;
-          // Substitui temp/ por output/ no caminho final
-          const finalPath = originalPath.replace("temp/", "output/");
-          originalFileName = finalPath;
+          originalFileName = originalPath;
         } else {
           // Fallback: usa o nome original se não encontrar match
           originalPath = file.originalname;
