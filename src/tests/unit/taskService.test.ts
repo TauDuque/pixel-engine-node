@@ -100,7 +100,8 @@ describe("TaskService Unit Tests", () => {
           workerData: {
             taskId: "507f1f77bcf86cd799439011",
             imagePath: "/test/image.jpg",
-            outputDir: expect.any(String),
+            originalPath: "/test/image.jpg",
+            outputDir: "output",
           },
         }
       );
