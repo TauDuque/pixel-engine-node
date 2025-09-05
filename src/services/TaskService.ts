@@ -12,6 +12,7 @@ import {
 import mongoose from "mongoose";
 import { Worker } from "worker_threads";
 import path from "path";
+import fs from "fs-extra";
 
 export class TaskService {
   /**
@@ -37,39 +38,36 @@ export class TaskService {
         throw new Error("Invalid image file or format not supported");
       }
 
-      // Verifica se a imagem já foi processada anteriormente
-      let existingImage;
-
       Logger.info("Checking for duplicate image", {
         uploadType: request.uploadType,
         originalFileName: request.originalFileName,
         imagePath: request.imagePath,
       });
 
-      if (request.uploadType === "multipart" && request.originalFileName) {
-        // Para multipart: valida por nome original do arquivo
-        Logger.info("Checking multipart duplicate by original filename", {
-          searchPath: request.originalFileName,
-        });
-        existingImage = await ImageModel.findOne({
-          originalPath: request.originalFileName,
-        });
-      } else {
-        // Para JSON: valida por caminho completo normalizado
-        const normalizedImagePath = request.imagePath.includes("\\")
-          ? request.imagePath.replace(/\\+/g, "/")
-          : request.imagePath;
+      // Para ambos os tipos: usa o mesmo path que será salvo no banco
+      let pathForDuplicateCheck: string;
 
-        Logger.info("Checking JSON duplicate by normalized path", {
-          originalPath: request.imagePath,
-          normalizedPath: normalizedImagePath,
-          hasBackslashes: request.imagePath.includes("\\"),
-          replacementResult: request.imagePath.replace(/\\+/g, "/"),
-        });
-        existingImage = await ImageModel.findOne({
-          originalPath: normalizedImagePath,
-        });
+      if (request.uploadType === "multipart" && request.originalFileName) {
+        pathForDuplicateCheck = request.originalFileName; // Agora é o caminho construído
+      } else {
+        pathForDuplicateCheck = request.imagePath;
       }
+
+      // Normaliza barras invertidas para barras normais
+      if (pathForDuplicateCheck.includes("\\")) {
+        pathForDuplicateCheck = pathForDuplicateCheck.replace(/\\+/g, "/");
+      }
+
+      Logger.info("Checking duplicate by path", {
+        uploadType: request.uploadType,
+        originalFileName: request.originalFileName,
+        imagePath: request.imagePath,
+        pathForDuplicateCheck: pathForDuplicateCheck,
+      });
+
+      const existingImage = await ImageModel.findOne({
+        originalPath: pathForDuplicateCheck,
+      });
 
       Logger.info("Duplicate check result", {
         foundExisting: !!existingImage,
@@ -85,16 +83,8 @@ export class TaskService {
       // Gera preço aleatório
       const price = ImageProcessor.generateRandomPrice();
 
-      // Cria a tarefa no banco
-      let originalPathForDb =
-        request.uploadType === "multipart" && request.originalFileName
-          ? request.originalFileName
-          : request.imagePath;
-
-      // Normaliza barras invertidas para barras normais
-      if (originalPathForDb.includes("\\")) {
-        originalPathForDb = originalPathForDb.replace(/\\+/g, "/");
-      }
+      // Cria a tarefa no banco - usa o mesmo path da validação de duplicidade
+      const originalPathForDb = pathForDuplicateCheck;
 
       Logger.info("Saving task with originalPath", {
         uploadType: request.uploadType,
@@ -114,13 +104,24 @@ export class TaskService {
       Logger.info("Task created", { taskId: savedTask._id, price });
 
       // Processa a imagem usando Worker Thread
-      // Para multipart, usa o imagePath (arquivo temporário)
+      // Para multipart, precisa passar o buffer
       // Para JSON, usa o imagePath (caminho original)
-      this.processImageWithWorker(
-        savedTask._id?.toString() || "",
-        request.imagePath,
-        originalPathForDb
-      );
+      if (request.uploadType === "multipart") {
+        // Para multipart, precisamos passar o buffer
+        // Mas o worker não suporta buffer ainda, então vamos manter o arquivo temporário
+        this.processImageWithWorker(
+          savedTask._id?.toString() || "",
+          request.imagePath,
+          originalPathForDb
+        );
+      } else {
+        // Para JSON, usa o imagePath (caminho original)
+        this.processImageWithWorker(
+          savedTask._id?.toString() || "",
+          request.imagePath,
+          originalPathForDb
+        );
+      }
 
       return {
         taskId: savedTask._id?.toString() || "",
@@ -277,7 +278,7 @@ export class TaskService {
         path: img.path,
         resolution: img.resolution,
         md5: img.md5,
-        originalPath: originalImagePath,
+        originalPath: img.originalName || originalImagePath, // Usa o originalName retornado pelo ImageProcessor
         taskId: new mongoose.Types.ObjectId(taskId),
       }));
 
@@ -287,6 +288,9 @@ export class TaskService {
         taskId,
         imagesCount: processedImages.length,
       });
+
+      // Limpa arquivo temporário se foi upload multipart
+      await this.cleanupTempFile(taskId);
     } catch (error) {
       Logger.error("Error handling worker success", {
         taskId,
@@ -314,8 +318,40 @@ export class TaskService {
         taskId,
         error: errorMessage,
       });
+
+      // Limpa arquivo temporário mesmo em caso de erro
+      await this.cleanupTempFile(taskId);
     } catch (error) {
       Logger.error("Error handling worker error", {
+        taskId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  /**
+   * Limpa arquivo temporário se foi upload multipart
+   */
+  private static async cleanupTempFile(taskId: string): Promise<void> {
+    try {
+      const task = await TaskModel.findById(taskId);
+      if (!task) return;
+
+      // Verifica se foi upload multipart (originalPath contém "temp/")
+      if (task.originalPath && task.originalPath.includes("temp/")) {
+        const tempFilePath = path.join(process.cwd(), task.originalPath);
+
+        // Verifica se o arquivo existe e deleta
+        if (await fs.pathExists(tempFilePath)) {
+          await fs.remove(tempFilePath);
+          Logger.info("Temporary file cleaned up", {
+            taskId,
+            tempFilePath,
+          });
+        }
+      }
+    } catch (error) {
+      Logger.error("Error cleaning up temporary file", {
         taskId,
         error: error instanceof Error ? error.message : "Unknown error",
       });
