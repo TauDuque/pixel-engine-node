@@ -156,6 +156,10 @@ This format offers several advantages:
 
 ### Create Task
 
+The API supports two methods for creating tasks:
+
+#### Method 1: JSON Upload (File Path)
+
 ```http
 POST /api/tasks
 Content-Type: application/json
@@ -165,7 +169,29 @@ Content-Type: application/json
 }
 ```
 
-**Response:**
+#### Method 2: Multipart Upload (File Upload)
+
+```http
+POST /api/tasks
+Content-Type: multipart/form-data
+
+# Form field: image (file)
+```
+
+**Example using curl:**
+
+```bash
+# JSON method
+curl -X POST http://localhost:3000/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"imagePath": "/path/to/image.jpg"}'
+
+# Multipart method
+curl -X POST http://localhost:3000/api/tasks \
+  -F "image=@/path/to/image.jpg"
+```
+
+**Response (both methods):**
 
 ```json
 {
@@ -181,9 +207,23 @@ Content-Type: application/json
 
 **Validation Features:**
 
-- **Duplicate Image Prevention**: The API prevents processing the same image multiple times
+- **Duplicate Image Prevention**: The API prevents processing the same image multiple times across both upload methods
 - **File Format Validation**: Only supported formats (jpg, jpeg, png, webp) are accepted
-- **File Existence Check**: Validates that the image file exists and is accessible
+- **File Existence Check**: For JSON uploads, validates that the image file exists and is accessible
+- **File Size Limit**: Maximum file size of 10MB for multipart uploads
+- **Automatic Cleanup**: Temporary files from multipart uploads are automatically cleaned up after processing
+
+**Upload Method Comparison:**
+
+| Feature             | JSON Upload                 | Multipart Upload                   |
+| ------------------- | --------------------------- | ---------------------------------- |
+| **Input**           | File path (string)          | File upload (binary)               |
+| **Use Case**        | Server-side file processing | Client-side file upload            |
+| **File Location**   | Must exist on server        | Uploaded from client               |
+| **Storage**         | Original path preserved     | Temporary file created             |
+| **Cleanup**         | No cleanup needed           | Automatic cleanup after processing |
+| **Duplicate Check** | Based on full file path     | Based on original filename         |
+| **Performance**     | Faster (no upload)          | Slower (file transfer)             |
 
 **Error Responses:**
 
@@ -385,10 +425,19 @@ You can test the API manually using the provided sample data:
 
 3. **Create a new task**:
 
+   **JSON method:**
+
    ```bash
    curl -X POST http://localhost:3000/api/tasks \
      -H "Content-Type: application/json" \
      -d '{"imagePath": "src/tests/fixtures/more.png"}'
+   ```
+
+   **Multipart method:**
+
+   ```bash
+   curl -X POST http://localhost:3000/api/tasks \
+     -F "image=@src/tests/fixtures/more.png"
    ```
 
 4. **Check task status**:
@@ -410,15 +459,17 @@ You can test the API manually using the provided sample data:
 5. **Enhanced Response Format**: Structured responses with `success`, `data`, and `message` fields for better developer experience
 6. **Consistent Error Handling**: All errors follow the same response structure
 7. **API-First Documentation**: Swagger/OpenAPI from the start
+8. **Dual Upload Support**: Both JSON (file path) and multipart (file upload) methods for maximum flexibility
 
 ### Data & Validation
 
-8. **Robust Validation**: Input validation and error handling
-9. **Database Optimization**: Indexes for efficient queries
-10. **Structured Logging**: For debugging and monitoring
+9. **Robust Validation**: Input validation and error handling
+10. **Database Optimization**: Indexes for efficient queries
+11. **Structured Logging**: For debugging and monitoring
+12. **Duplicate Prevention**: Cross-method duplicate image detection
 
 ### Developer Experience
 
-11. **Utility Scripts**: Database initialization and environment setup scripts
-12. **Comprehensive Testing**: Unit and integration tests with coverage
-13. **TypeScript**: Type safety and better development experience
+13. **Utility Scripts**: Database initialization and environment setup scripts
+14. **Comprehensive Testing**: Unit and integration tests with coverage
+15. **TypeScript**: Type safety and better development experience
