@@ -4,6 +4,7 @@ import { Logger } from "../utils/logger";
 import { ApiResponse, CreateTaskRequest } from "../types";
 import { uploadSingle } from "../middleware/upload";
 import path from "path";
+import fs from "fs-extra";
 
 export class TaskController {
   /**
@@ -37,12 +38,45 @@ export class TaskController {
       if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         // Upload de arquivo via multipart - usa o primeiro arquivo
         const file = req.files[0] as Express.Multer.File;
-        imagePath = file.path;
         uploadType = "multipart";
-        originalFileName = file.originalname;
-        Logger.info("File uploaded via multipart", {
+
+        // Salva o buffer temporariamente para processamento
+        const tempPath = path.join(process.cwd(), "temp", file.originalname);
+        await fs.ensureDir(path.dirname(tempPath));
+        await fs.writeFile(tempPath, file.buffer);
+        imagePath = tempPath;
+
+        // Para multipart, constrói o caminho removendo o timestamp (lógica que você pediu)
+        const nameParts = file.originalname.split(".");
+        const nameWithoutExt = nameParts[0]; // "jeanne dark"
+        const extension = nameParts[1]; // "jpg"
+
+        // Busca o match no path e remove tudo após o match
+        const matchIndex = imagePath.indexOf(nameWithoutExt);
+        let originalPath: string;
+        if (matchIndex !== -1) {
+          const pathWithoutTimestamp = imagePath.substring(
+            0,
+            matchIndex + nameWithoutExt.length
+          );
+          originalPath = pathWithoutTimestamp + "." + extension;
+          // Substitui temp/ por output/ no caminho final
+          const finalPath = originalPath.replace("temp/", "output/");
+          originalFileName = finalPath;
+        } else {
+          // Fallback: usa o nome original se não encontrar match
+          originalPath = file.originalname;
+          originalFileName = file.originalname;
+        }
+
+        Logger.info("File uploaded via multipart (buffer)", {
           filename: file.originalname,
-          path: imagePath,
+          tempPath: imagePath,
+          nameWithoutExt: nameWithoutExt,
+          extension: extension,
+          matchIndex: matchIndex,
+          originalPath: originalPath,
+          finalPath: originalFileName,
           fileSize: file.size,
           mimetype: file.mimetype,
           uploadType: uploadType,
