@@ -13,7 +13,14 @@ export class ImageProcessor {
     outputBasePath: string,
     resolutions: number[] = config.resolutions,
     originalName?: string
-  ): Promise<Array<{ resolution: string; path: string; md5: string }>> {
+  ): Promise<
+    Array<{
+      resolution: string;
+      path: string;
+      md5: string;
+      originalName: string;
+    }>
+  > {
     try {
       // Verifica se o arquivo de entrada existe
       if (!(await fs.pathExists(inputPath))) {
@@ -34,13 +41,24 @@ export class ImageProcessor {
       }
 
       // Cria o diretório base de saída
-      const baseName = originalName || path.parse(inputPath).name;
+      let baseName: string;
+      if (originalName) {
+        // Se originalName é um caminho completo, extrai apenas o nome do arquivo
+        baseName = path.parse(originalName).name;
+      } else {
+        // Caso contrário, usa o nome do arquivo do inputPath
+        baseName = path.parse(inputPath).name;
+      }
       const cleanName = baseName.replace(/\s+/g, "_"); // Remove espaços
       const outputDir = path.join(outputBasePath, cleanName);
       await fs.ensureDir(outputDir);
 
-      const results: Array<{ resolution: string; path: string; md5: string }> =
-        [];
+      const results: Array<{
+        resolution: string;
+        path: string;
+        md5: string;
+        originalName: string;
+      }> = [];
 
       // Processa cada resolução
       for (const resolution of resolutions) {
@@ -73,6 +91,7 @@ export class ImageProcessor {
           resolution: resolution.toString(),
           path: returnPath, // Retorna path no formato Unix
           md5,
+          originalName: originalName || path.parse(inputPath).name, // Retorna o nome original completo
         });
       }
 
