@@ -16,8 +16,15 @@ const router = Router();
  *       properties:
  *         imagePath:
  *           type: string
- *           description: Path to the original image file
+ *           description: Path to the original image file (local path) or URL to an image
  *           example: "/path/to/image.jpg"
+ *           examples:
+ *             localPath:
+ *               summary: Local file path
+ *               value: "/path/to/image.jpg"
+ *             imageUrl:
+ *               summary: Image URL
+ *               value: "https://example.com/image.jpg"
  *
  *     CreateTaskResponse:
  *       type: object
@@ -108,11 +115,12 @@ const router = Router();
  *
  *       **📋 UPLOAD METHODS - Choose one:**
  *
- *       **🔹 Method 1: JSON Upload (File Path)**
+ *       **🔹 Method 1: JSON Upload (File Path or URL)**
  *       - Use `Content-Type: application/json`
- *       - Provide local file path in request body
- *       - File must exist on the server
- *       - Faster processing (no file transfer)
+ *       - Provide local file path OR image URL in request body
+ *       - For local files: file must exist on the server
+ *       - For URLs: image will be downloaded automatically
+ *       - Faster processing (no file transfer for local files)
  *
  *       **🔹 Method 2: Multipart Upload (File Upload)**
  *       - Use `Content-Type: multipart/form-data`
@@ -125,14 +133,23 @@ const router = Router();
  *       - Prevents duplicate image processing
  *       - Assigns random price between 5-50 units
  *       - Processes images asynchronously using Worker Threads
+ *       - Supports image URLs (HTTP/HTTPS)
+ *       - Automatic image download from URLs
  *
  *       **📝 Example Commands:**
  *
- *       **JSON Method:**
+ *       **JSON Method (Local Path):**
  *       ```bash
  *       curl -X POST http://localhost:3000/api/tasks \
  *         -H "Content-Type: application/json" \
  *         -d '{"imagePath": "/path/to/image.jpg"}'
+ *       ```
+ *
+ *       **JSON Method (Image URL):**
+ *       ```bash
+ *       curl -X POST http://localhost:3000/api/tasks \
+ *         -H "Content-Type: application/json" \
+ *         -d '{"imagePath": "https://example.com/image.jpg"}'
  *       ```
  *
  *       **Multipart Method:**
@@ -146,7 +163,7 @@ const router = Router();
  *       description: |
  *         **Choose your upload method:**
  *
- *         **🔹 JSON Method:** Send file path as JSON
+ *         **🔹 JSON Method:** Send file path or URL as JSON
  *         **🔹 Multipart Method:** Upload file directly
  *       content:
  *         application/json:
@@ -155,19 +172,27 @@ const router = Router();
  *           description: |
  *             **JSON Upload Method**
  *
- *             Send the local file path as JSON.
+ *             Send the local file path or image URL as JSON.
  *
- *             **Example:**
+ *             **Example (Local Path):**
  *             ```json
  *             {
  *               "imagePath": "/path/to/your/image.jpg"
  *             }
  *             ```
  *
+ *             **Example (Image URL):**
+ *             ```json
+ *             {
+ *               "imagePath": "https://example.com/image.jpg"
+ *             }
+ *             ```
+ *
  *             **Requirements:**
- *             - File must exist on the server
- *             - Use absolute or relative path
+ *             - For local files: file must exist on the server
+ *             - For URLs: must be a valid HTTP/HTTPS URL pointing to an image
  *             - Supported formats: jpg, jpeg, png, webp
+ *             - URL images will be downloaded automatically
  *         multipart/form-data:
  *           schema:
  *             type: object
