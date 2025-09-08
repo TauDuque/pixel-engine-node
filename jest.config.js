@@ -15,8 +15,13 @@ module.exports = {
   ],
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov", "html"],
-  setupFilesAfterEnv: ["<rootDir>/src/tests/setup.ts"],
+  globalSetup: "<rootDir>/src/tests/globalSetup.ts",
+  globalTeardown: "<rootDir>/src/tests/globalTeardown.ts",
   testTimeout: 20000, // Increased for async worker thread processing
   // Define NODE_ENV=test for all tests
   setupFiles: ["<rootDir>/src/tests/env-setup.ts"],
+  // Force Jest to exit after tests complete
+  forceExit: true,
+  // Detect open handles to help debugging
+  detectOpenHandles: true,
 };

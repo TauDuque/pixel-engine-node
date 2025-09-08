@@ -3,7 +3,7 @@ import { config } from "./environment";
 
 export class Database {
   private static instance: Database;
-  private isConnected = false;
+  private connected = false;
 
   private constructor() {}
 
@@ -15,7 +15,7 @@ export class Database {
   }
 
   public async connect(): Promise<void> {
-    if (this.isConnected) {
+    if (this.connected) {
       console.log("Database already connected");
       return;
     }
@@ -25,7 +25,7 @@ export class Database {
         config.nodeEnv === "test" ? config.mongodbTestUri : config.mongodbUri;
 
       await mongoose.connect(mongoUri);
-      this.isConnected = true;
+      this.connected = true;
       console.log("Connected to MongoDB");
     } catch (error) {
       console.error("MongoDB connection error:", error);
@@ -34,18 +34,22 @@ export class Database {
   }
 
   public async disconnect(): Promise<void> {
-    if (!this.isConnected) {
+    if (!this.connected) {
       return;
     }
 
     try {
       await mongoose.disconnect();
-      this.isConnected = false;
+      this.connected = false;
       console.log("Disconnected from MongoDB");
     } catch (error) {
       console.error("MongoDB disconnection error:", error);
       throw error;
     }
+  }
+
+  public isConnected(): boolean {
+    return this.connected;
   }
 
   public async clearDatabase(): Promise<void> {
