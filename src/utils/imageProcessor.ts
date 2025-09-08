@@ -3,6 +3,7 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs-extra";
 import { config } from "../config/environment";
+import { UrlDownloader } from "./urlDownloader";
 
 export class ImageProcessor {
   /**
@@ -120,6 +121,48 @@ export class ImageProcessor {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Valida se uma string é uma URL válida de imagem
+   */
+  public static isValidImageUrl(urlString: string): boolean {
+    return UrlDownloader.isValidImageUrl(urlString);
+  }
+
+  /**
+   * Valida se uma string é um caminho de arquivo local válido
+   */
+  public static isValidLocalPath(pathString: string): boolean {
+    try {
+      // Primeiro verifica se não é uma URL (verificação simples)
+      if (
+        pathString.startsWith("http://") ||
+        pathString.startsWith("https://")
+      ) {
+        return false;
+      }
+
+      // Verifica se é um caminho válido
+      const parsedPath = path.parse(pathString);
+      if (!parsedPath.name || !parsedPath.ext) {
+        return false;
+      }
+
+      // Verifica se a extensão é suportada
+      const extension = parsedPath.ext.toLowerCase().substring(1);
+
+      return config.supportedFormats.includes(extension);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Valida se uma string é uma URL ou caminho local válido
+   */
+  public static isValidImageSource(source: string): boolean {
+    return this.isValidImageUrl(source) || this.isValidLocalPath(source);
   }
 
   /**
