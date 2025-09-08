@@ -1,6 +1,7 @@
 import { TaskModel } from "../models/Task";
 import { ImageModel } from "../models/Image";
 import { ImageProcessor } from "../utils/imageProcessor";
+import { UrlDownloader } from "../utils/urlDownloader";
 import { Logger } from "../utils/logger";
 import { config } from "../config/environment";
 import {
@@ -30,27 +31,65 @@ export class TaskService {
         },
       });
 
-      // Valida se a imagem existe e é válida
-      const isValidImage = await ImageProcessor.validateImage(
-        request.imagePath
-      );
-      if (!isValidImage) {
-        throw new Error("Invalid image file or format not supported");
+      // Determina se é uma URL ou caminho local
+      const isUrl = ImageProcessor.isValidImageUrl(request.imagePath);
+      const isLocalPath = ImageProcessor.isValidLocalPath(request.imagePath);
+
+      if (!isUrl && !isLocalPath) {
+        throw new Error(
+          "Invalid image source. Must be a valid URL or local file path."
+        );
+      }
+
+      let finalImagePath = request.imagePath;
+      let originalPathForDb = request.imagePath;
+
+      // Se for uma URL, faz o download da imagem
+      if (isUrl) {
+        Logger.info("Processing URL image", { url: request.imagePath });
+
+        const downloadResult = await UrlDownloader.downloadImage(
+          request.imagePath
+        );
+        if (!downloadResult.success || !downloadResult.localPath) {
+          throw new Error(
+            downloadResult.error || "Failed to download image from URL"
+          );
+        }
+
+        finalImagePath = downloadResult.localPath;
+        originalPathForDb = request.imagePath; // Mantém a URL original para o banco
+
+        Logger.info("Image downloaded successfully", {
+          originalUrl: request.imagePath,
+          localPath: finalImagePath,
+          filename: downloadResult.filename,
+        });
+      } else {
+        // Para caminhos locais, valida se o arquivo existe
+        const isValidImage = await ImageProcessor.validateImage(
+          request.imagePath
+        );
+        if (!isValidImage) {
+          throw new Error("Invalid image file or format not supported");
+        }
       }
 
       Logger.info("Checking for duplicate image", {
         uploadType: request.uploadType,
         originalFileName: request.originalFileName,
         imagePath: request.imagePath,
+        isUrl,
+        originalPathForDb,
       });
 
-      // Para ambos os tipos: usa o mesmo path que será salvo no banco
+      // Para verificação de duplicatas, usa o caminho original (URL ou caminho local)
       let pathForDuplicateCheck: string;
 
       if (request.uploadType === "multipart" && request.originalFileName) {
-        pathForDuplicateCheck = request.originalFileName; // Agora é o caminho construído
+        pathForDuplicateCheck = request.originalFileName;
       } else {
-        pathForDuplicateCheck = request.imagePath;
+        pathForDuplicateCheck = originalPathForDb; // Usa a URL original ou caminho local
       }
 
       // Normaliza barras invertidas para barras normais
@@ -63,6 +102,7 @@ export class TaskService {
         originalFileName: request.originalFileName,
         imagePath: request.imagePath,
         pathForDuplicateCheck: pathForDuplicateCheck,
+        isUrl,
       });
 
       const existingImage = await ImageModel.findOne({
@@ -83,14 +123,12 @@ export class TaskService {
       // Gera preço aleatório
       const price = ImageProcessor.generateRandomPrice();
 
-      // Cria a tarefa no banco - usa o mesmo path da validação de duplicidade
-      const originalPathForDb = pathForDuplicateCheck;
-
       Logger.info("Saving task with originalPath", {
         uploadType: request.uploadType,
         originalFileName: request.originalFileName,
         imagePath: request.imagePath,
         originalPathForDb: originalPathForDb,
+        isUrl,
       });
 
       const task = new TaskModel({
@@ -104,24 +142,12 @@ export class TaskService {
       Logger.info("Task created", { taskId: savedTask._id, price });
 
       // Processa a imagem usando Worker Thread
-      // Para multipart, precisa passar o buffer
-      // Para JSON, usa o imagePath (caminho original)
-      if (request.uploadType === "multipart") {
-        // Para multipart, precisamos passar o buffer
-        // Mas o worker não suporta buffer ainda, então vamos manter o arquivo temporário
-        this.processImageWithWorker(
-          savedTask._id?.toString() || "",
-          request.imagePath,
-          originalPathForDb
-        );
-      } else {
-        // Para JSON, usa o imagePath (caminho original)
-        this.processImageWithWorker(
-          savedTask._id?.toString() || "",
-          request.imagePath,
-          originalPathForDb
-        );
-      }
+      // Usa o caminho final (local) para processamento, mas mantém o original para referência
+      this.processImageWithWorker(
+        savedTask._id?.toString() || "",
+        finalImagePath, // Usa o caminho local (seja original ou baixado)
+        originalPathForDb // Mantém o caminho original para referência
+      );
 
       return {
         taskId: savedTask._id?.toString() || "",
