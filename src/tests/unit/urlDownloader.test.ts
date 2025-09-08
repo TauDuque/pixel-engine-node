@@ -143,7 +143,7 @@ describe("UrlDownloader", () => {
       await UrlDownloader.cleanupTempFiles();
 
       expect(mockedFs.pathExists).toHaveBeenCalledWith(
-        expect.stringContaining("temp/downloads")
+        expect.stringMatching(/temp.*downloads/)
       );
       expect(mockedFs.remove).toHaveBeenCalled();
     });

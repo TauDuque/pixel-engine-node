@@ -17,6 +17,8 @@ jest.mock("../../utils/imageProcessor", () => ({
     validateImage: jest.fn(),
     generateRandomPrice: jest.fn(),
     processImage: jest.fn(),
+    isValidImageUrl: jest.fn(),
+    isValidLocalPath: jest.fn(),
   },
 }));
 
@@ -76,6 +78,8 @@ describe("TaskService Unit Tests", () => {
 
       (ImageProcessor.validateImage as jest.Mock).mockResolvedValue(true);
       (ImageProcessor.generateRandomPrice as jest.Mock).mockReturnValue(25.5);
+      (ImageProcessor.isValidImageUrl as jest.Mock).mockReturnValue(false);
+      (ImageProcessor.isValidLocalPath as jest.Mock).mockReturnValue(true);
       (TaskModel as unknown as jest.Mock).mockImplementation(() => mockTask);
 
       // Act
@@ -144,6 +148,8 @@ describe("TaskService Unit Tests", () => {
 
       (ImageProcessor.validateImage as jest.Mock).mockResolvedValue(true);
       (ImageProcessor.generateRandomPrice as jest.Mock).mockReturnValue(25.5);
+      (ImageProcessor.isValidImageUrl as jest.Mock).mockReturnValue(false);
+      (ImageProcessor.isValidLocalPath as jest.Mock).mockReturnValue(true);
       (TaskModel as unknown as jest.Mock).mockImplementation(() => mockTask);
       (Worker as unknown as jest.Mock).mockImplementation(() => {
         throw new Error("Worker creation failed");
@@ -248,6 +254,8 @@ describe("TaskService Unit Tests", () => {
 
       (ImageProcessor.validateImage as jest.Mock).mockResolvedValue(true);
       (ImageProcessor.generateRandomPrice as jest.Mock).mockReturnValue(25.5);
+      (ImageProcessor.isValidImageUrl as jest.Mock).mockReturnValue(false);
+      (ImageProcessor.isValidLocalPath as jest.Mock).mockReturnValue(true);
       (TaskModel as unknown as jest.Mock).mockImplementation(() => mockTask);
       (TaskModel.findByIdAndUpdate as jest.Mock).mockResolvedValue({});
       (ImageModel.insertMany as jest.Mock).mockResolvedValue({});
@@ -313,6 +321,8 @@ describe("TaskService Unit Tests", () => {
 
       (ImageProcessor.validateImage as jest.Mock).mockResolvedValue(true);
       (ImageProcessor.generateRandomPrice as jest.Mock).mockReturnValue(25.5);
+      (ImageProcessor.isValidImageUrl as jest.Mock).mockReturnValue(false);
+      (ImageProcessor.isValidLocalPath as jest.Mock).mockReturnValue(true);
       (TaskModel as unknown as jest.Mock).mockImplementation(() => mockTask);
       (TaskModel.findByIdAndUpdate as jest.Mock).mockResolvedValue({});
 

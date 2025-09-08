@@ -25,20 +25,31 @@ describe("URL Image Integration Tests", () => {
     process.env.MONGODB_TEST_URI =
       "mongodb://localhost:27017/pixel-engine-test";
 
+    // Get database instance (don't connect again if already connected)
+    database = Database.getInstance();
+    if (!database.isConnected()) {
+      await database.connect();
+    }
+
+    // Create and start app
     app = new App();
     await app.start();
-    database = Database.getInstance();
-    await database.connect();
   });
 
   afterAll(async () => {
     try {
-      await database.clearDatabase();
-      await database.disconnect();
-      await app.stop();
+      // Stop the server first
+      if (app) {
+        await app.stop();
+      }
+
+      // Clean database only if still connected
+      if (database && database.isConnected()) {
+        await database.clearDatabase();
+      }
 
       // Aguarda um pouco para garantir que todas as operações assíncronas terminem
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     } catch (error) {
       console.error("Error in afterAll cleanup:", error);
     }
