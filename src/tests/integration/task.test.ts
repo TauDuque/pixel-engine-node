@@ -112,7 +112,7 @@ describe("Task Integration Tests", () => {
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe("Validation Error");
       expect(response.body.message).toBe(
-        "Either imagePath (JSON) or file upload (multipart) is required"
+        "Either imagePath (JSON - local path or URL) or file upload (multipart) is required"
       );
     });
 
