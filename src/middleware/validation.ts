@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ErrorResponse } from "../types";
+import { ImageProcessor } from "../utils/imageProcessor";
 import mongoose from "mongoose";
 
 export class ValidationMiddleware {
@@ -18,7 +19,7 @@ export class ValidationMiddleware {
         success: false,
         error: "Validation Error",
         message:
-          "Either imagePath (JSON) or file upload (multipart) is required",
+          "Either imagePath (JSON - local path or URL) or file upload (multipart) is required",
         statusCode: 400,
       };
       return res.status(400).json(response);
@@ -38,11 +39,23 @@ export class ValidationMiddleware {
         return res.status(400).json(response);
       }
 
-      if (imagePath.length < 1 || imagePath.length > 500) {
+      if (imagePath.length < 1 || imagePath.length > 2000) {
         const response: ErrorResponse = {
           success: false,
           error: "Validation Error",
-          message: "Image path must be between 1 and 500 characters",
+          message: "Image path/URL must be between 1 and 2000 characters",
+          statusCode: 400,
+        };
+        return res.status(400).json(response);
+      }
+
+      // Valida se é uma fonte de imagem válida (URL ou caminho local)
+      if (!ImageProcessor.isValidImageSource(imagePath)) {
+        const response: ErrorResponse = {
+          success: false,
+          error: "Validation Error",
+          message:
+            "Invalid image source. Must be a valid URL or local file path with supported format (jpg, jpeg, png, webp)",
           statusCode: 400,
         };
         return res.status(400).json(response);

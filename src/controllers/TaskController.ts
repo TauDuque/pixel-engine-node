@@ -3,13 +3,16 @@ import { TaskService } from "../services/TaskService";
 import { Logger } from "../utils/logger";
 import { ApiResponse, CreateTaskRequest } from "../types";
 import { uploadSingle } from "../middleware/upload";
+import { ImageProcessor } from "../utils/imageProcessor";
 import path from "path";
 import fs from "fs-extra";
 
 export class TaskController {
   /**
    * POST /tasks - Cria uma nova tarefa de processamento
-   * Suporta tanto JSON (imagePath) quanto multipart (file upload)
+   * Suporta:
+   * - JSON com imagePath (caminho local ou URL)
+   * - Multipart com upload de arquivo
    */
   public static async createTask(req: Request, res: Response): Promise<void> {
     try {
@@ -81,10 +84,22 @@ export class TaskController {
           originalFileName: originalFileName,
         });
       } else if (req.body.imagePath) {
-        // JSON com imagePath
+        // JSON com imagePath (pode ser caminho local ou URL)
         imagePath = req.body.imagePath;
         uploadType = "json";
-        Logger.info("Image path provided via JSON", { imagePath });
+
+        // Valida se é uma fonte de imagem válida (URL ou caminho local)
+        if (!ImageProcessor.isValidImageSource(imagePath)) {
+          throw new Error(
+            "Invalid image source. Must be a valid URL or local file path with supported format."
+          );
+        }
+
+        Logger.info("Image source provided via JSON", {
+          imagePath,
+          isUrl: ImageProcessor.isValidImageUrl(imagePath),
+          isLocalPath: ImageProcessor.isValidLocalPath(imagePath),
+        });
       } else {
         Logger.error("No valid input found", {
           files: req.files,
@@ -92,7 +107,7 @@ export class TaskController {
           headers: req.headers,
         });
         throw new Error(
-          "Either imagePath (JSON) or file upload (multipart) is required"
+          "Either imagePath (JSON - local path or URL) or file upload (multipart) is required"
         );
       }
 
