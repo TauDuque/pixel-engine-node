@@ -44,6 +44,11 @@ export class TaskService {
       let finalImagePath = request.imagePath;
       let originalPathForDb = request.imagePath;
 
+      // Para multipart, usa o originalFileName como originalPathForDb
+      if (request.uploadType === "multipart" && request.originalFileName) {
+        originalPathForDb = request.originalFileName;
+      }
+
       // Se for uma URL, faz o download da imagem
       if (isUrl) {
         Logger.info("Processing URL image", { url: request.imagePath });
