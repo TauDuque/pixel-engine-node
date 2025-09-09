@@ -18,23 +18,17 @@ This API provides:
 
 ## Architecture
 
-The project implements **Hexagonal Architecture (Ports & Adapters)** with a **dual-architecture approach** that maintains full backward compatibility:
+The project implements **Hexagonal Architecture (Ports & Adapters)** as the primary and only architecture:
 
-### 🏗️ **Dual Architecture Implementation**
+### 🏗️ **Hexagonal Architecture Implementation**
 
-**🔹 Original Architecture (`/api/tasks`)**
+**🔹 Primary Architecture (`/api/tasks`)**
 
-- **Status**: Fully functional and maintained
-- **Purpose**: Legacy implementation for backward compatibility
-- **Structure**: Traditional layered architecture
-- **Use Case**: Existing integrations and clients
-
-**🔹 Hexagonal Architecture (`/api/hexagonal/tasks`)**
-
-- **Status**: New implementation with clean architecture
-- **Purpose**: Modern, testable, and maintainable codebase
-- **Structure**: Ports & Adapters pattern
-- **Use Case**: New integrations and future development
+- **Status**: Fully functional and production-ready
+- **Purpose**: Clean, testable, and maintainable codebase
+- **Structure**: Ports & Adapters pattern with dependency injection
+- **Use Case**: All API integrations and client applications
+- **Benefits**: Separation of concerns, testability, and maintainability
 
 ### 🎯 **Hexagonal Architecture Components**
 
@@ -186,25 +180,26 @@ npm run lint:fix
 
 ## API Endpoints
 
-### 🚀 **Dual Architecture Endpoints**
+### 🚀 **API Endpoints**
 
-The API provides **two parallel implementations** for maximum flexibility:
-
-**🔹 Original Architecture:**
+The API provides a single, clean implementation with Hexagonal Architecture:
 
 - **Base URL**: `/api/tasks`
-- **Status**: Stable and fully functional
-- **Use Case**: Existing integrations, backward compatibility
+- **Status**: Production-ready with Hexagonal Architecture
+- **Use Case**: All API integrations and client applications
 
-**🔹 Hexagonal Architecture:**
+**🔹 Features:**
 
-- **Base URL**: `/api/hexagonal/tasks`
-- **Status**: Modern implementation with clean architecture
-- **Use Case**: New integrations, future development
+- **Upload Methods**: JSON (file path/URL) and Multipart (file upload)
+- **Processing**: Asynchronous image processing with Worker Threads
+- **Resolutions**: Automatic generation of 1024px and 800px variants
+- **Pricing**: Dynamic pricing system (5-50 units)
+- **Duplicates**: Prevention of duplicate image processing
+- **Architecture**: Clean separation of concerns with Ports & Adapters
 
 ### 📋 **Enhanced Response Format**
 
-Both architectures use the same enhanced response format:
+The API uses a consistent enhanced response format:
 
 ```json
 {
@@ -231,7 +226,7 @@ Both architectures support the same methods for creating tasks:
 #### Method 1: JSON Upload (File Path or URL)
 
 ```http
-POST /api/tasks                    # Original Architecture
+POST /api/tasks                    # Hexagonal Architecture
 POST /api/hexagonal/tasks          # Hexagonal Architecture
 Content-Type: application/json
 
@@ -245,7 +240,7 @@ Content-Type: application/json
 #### Method 2: Multipart Upload (File Upload)
 
 ```http
-POST /api/tasks                    # Original Architecture
+POST /api/tasks                    # Hexagonal Architecture
 POST /api/hexagonal/tasks          # Hexagonal Architecture
 Content-Type: multipart/form-data
 
@@ -255,22 +250,13 @@ Content-Type: multipart/form-data
 **Example using curl:**
 
 ```bash
-# Original Architecture - JSON method
-curl -X POST http://localhost:3000/api/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"imagePath": "/path/to/image.jpg"}'
-
 # Hexagonal Architecture - JSON method
-curl -X POST http://localhost:3000/api/hexagonal/tasks \
+curl -X POST http://localhost:3000/api/tasks \
   -H "Content-Type: application/json" \
   -d '{"imagePath": "/path/to/image.jpg"}'
-
-# Original Architecture - Multipart method
-curl -X POST http://localhost:3000/api/tasks \
-  -F "image=@/path/to/image.jpg"
 
 # Hexagonal Architecture - Multipart method
-curl -X POST http://localhost:3000/api/hexagonal/tasks \
+curl -X POST http://localhost:3000/api/tasks \
   -F "image=@/path/to/image.jpg"
 ```
 
@@ -328,11 +314,10 @@ curl -X POST http://localhost:3000/api/hexagonal/tasks \
 
 ### 🔍 **Get Task**
 
-Both architectures provide the same endpoint for retrieving task information:
+The API provides a single endpoint for retrieving task information:
 
 ```http
-GET /api/tasks/{taskId}                    # Original Architecture
-GET /api/hexagonal/tasks/{taskId}          # Hexagonal Architecture
+GET /api/tasks/{taskId}                    # Hexagonal Architecture
 ```
 
 **Response (completed):**
@@ -432,14 +417,12 @@ src/
 │   │   └── UrlDownloaderAdapter.ts     # HTTP implementation
 │   └── controllers/              # HTTP controllers
 │       └── HexagonalTaskController.ts  # Hexagonal controller
-├── 🔧 legacy/                    # Original Architecture (Maintained)
-│   ├── controllers/              # Original HTTP controllers
-│   ├── services/                 # Original business logic
-│   ├── models/                   # MongoDB models
-│   └── utils/                    # Utilities (image processing, logging)
+├── 🔧 services/                  # Business Logic Services (Reused by Adapters)
+│   └── TaskService.ts            # Core business logic
+├── 🔧 models/                    # MongoDB models
+├── 🔧 utils/                     # Utilities (image processing, logging)
 ├── 🛣️ routes/                    # Route definitions
-│   ├── taskRoutes.ts             # Original routes
-│   ├── hexagonalTaskRoutes.ts    # Hexagonal routes
+│   ├── hexagonalTaskRoutes.ts    # Hexagonal routes (primary)
 │   └── healthRoutes.ts           # Health check routes
 ├── ⚙️ config/                    # Configuration
 │   ├── database.ts               # Database configuration
@@ -447,7 +430,6 @@ src/
 │   └── swagger.ts                # Swagger documentation
 ├── 🧪 tests/                     # Comprehensive testing
 │   ├── integration/              # Integration tests
-│   │   ├── task.test.ts          # Original architecture tests
 │   │   ├── hexagonalTask.test.ts # Hexagonal architecture tests
 │   │   └── urlImage.test.ts      # URL image tests
 │   ├── unit/                     # Unit tests
@@ -482,11 +464,11 @@ scripts/
 - **Controllers**: Handle HTTP requests and responses
 - **External services**: Database, file system, HTTP clients
 
-**Legacy Layer (`src/controllers/`, `src/services/`, etc.):**
+**Services Layer (`src/services/`, `src/utils/`, etc.):**
 
-- **Original implementation** maintained for backward compatibility
-- **Full functionality** preserved without breaking changes
-- **Gradual migration** path to hexagonal architecture
+- **Core business logic** reused by hexagonal adapters
+- **Full functionality** preserved and enhanced
+- **Clean integration** with hexagonal architecture
 
 ## Database
 
@@ -602,7 +584,7 @@ You can test the API manually using the provided sample data:
 5. **Enhanced Response Format**: Structured responses with `success`, `data`, and `message` fields for better developer experience
 6. **Consistent Error Handling**: All errors follow the same response structure
 7. **API-First Documentation**: Swagger/OpenAPI from the start
-8. **Dual Upload Support**: Both JSON (file path) and multipart (file upload) methods for maximum flexibility
+8. **Multiple Upload Methods**: JSON (file path/URL) and multipart (file upload) methods for maximum flexibility
 
 ### Data & Validation
 

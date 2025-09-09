@@ -14,9 +14,8 @@ const options: swaggerJsdoc.Options = {
         "prevención de imágenes duplicadas, soporte para upload JSON (path local/URL) y multipart (archivo), " +
         "gestión de errores centralizada, documentación completa con Swagger/OpenAPI, " +
         "Arquitectura Hexagonal con separación clara de responsabilidades. " +
-        "Arquitectura: Rutas Originales (/api/tasks) para implementación legacy funcional, " +
-        "Rutas Hexagonales (/api/hexagonal/tasks) para nueva arquitectura con Ports & Adapters, " +
-        "Compatibilidad Total con ambas implementaciones coexistiendo sin breaking changes. " +
+        "Arquitectura: Implementación única con Arquitectura Hexagonal (/api/tasks) usando Ports & Adapters, " +
+        "reutilización de servicios existentes através de adapters, separación clara de responsabilidades. " +
         "Repository: https://github.com/TauDuque/pixel-engine-node.git",
       contact: {
         name: "API Support",
@@ -37,12 +36,7 @@ const options: swaggerJsdoc.Options = {
       {
         name: "Tasks",
         description:
-          "Image processing tasks management (Original Architecture)",
-      },
-      {
-        name: "Tasks - Hexagonal",
-        description:
-          "Image processing tasks management (Hexagonal Architecture)",
+          "Image processing tasks management with Hexagonal Architecture",
       },
       {
         name: "Health",
