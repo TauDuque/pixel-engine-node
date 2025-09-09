@@ -26,11 +26,13 @@ export class HexagonalTaskController {
 
   /**
    * POST /tasks - Cria uma nova tarefa de processamento
-   * REUTILIZA a lógica do TaskController existente
+   * REUTILIZA a lógica do TaskController existente com todas as funcionalidades
    */
   public async createTask(req: Request, res: Response): Promise<void> {
     try {
       let imagePath: string;
+      let uploadType: "json" | "multipart" = "json";
+      let originalFileName: string | undefined;
 
       // DEBUG: Log completo da requisição (reutiliza lógica existente)
       Logger.info("DEBUG - Request details", {
@@ -48,36 +50,58 @@ export class HexagonalTaskController {
         contentType: req.headers["content-type"],
       });
 
-      // Determina o tipo de upload e extrai o imagePath (reutiliza lógica existente)
+      // Verifica se é upload de arquivo (multipart) ou JSON
       if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-        // Upload multipart (reutiliza lógica existente)
-        const file = req.files[0];
-        imagePath = file.path;
+        // Upload de arquivo via multipart - REUTILIZA lógica completa do TaskController
+        const file = req.files[0] as Express.Multer.File;
+        uploadType = "multipart";
 
-        Logger.info("Image source provided via multipart upload", {
-          originalName: file.originalname,
-          tempPath: file.path,
-          size: file.size,
-          mimetype: file.mimetype,
-        });
+        // Salva o buffer temporariamente para processamento (lógica original)
+        const tempPath = path.join(process.cwd(), "temp", file.originalname);
+        await fs.ensureDir(path.dirname(tempPath));
+        await fs.writeFile(tempPath, file.buffer);
+        imagePath = tempPath;
 
-        // Valida se é uma imagem (reutiliza lógica existente)
-        if (!file.mimetype.startsWith("image/")) {
-          // Remove o arquivo temporário se não for uma imagem
-          await fs.remove(file.path);
-          res.status(400).json({
-            success: false,
-            error: "File must be an image",
-            message: "Only image files are allowed",
-          });
-          return;
+        // Para multipart, constrói o caminho removendo o timestamp (lógica original)
+        const nameParts = file.originalname.split(".");
+        const nameWithoutExt = nameParts[0]; // "jeanne dark"
+        const extension = nameParts[1]; // "jpg"
+
+        // Busca o match no nome original e remove tudo após o match (lógica original)
+        const matchIndex = file.originalname.indexOf(nameWithoutExt);
+        let originalPath: string;
+        if (matchIndex !== -1) {
+          const pathWithoutTimestamp = file.originalname.substring(
+            0,
+            matchIndex + nameWithoutExt.length
+          );
+          originalPath = pathWithoutTimestamp + "." + extension;
+          originalFileName = originalPath;
+        } else {
+          // Fallback: usa o nome original se não encontrar match
+          originalPath = file.originalname;
+          originalFileName = file.originalname;
         }
+
+        Logger.info("File uploaded via multipart (buffer)", {
+          filename: file.originalname,
+          tempPath: imagePath,
+          nameWithoutExt: nameWithoutExt,
+          extension: extension,
+          matchIndex: matchIndex,
+          originalPath: originalPath,
+          finalPath: originalFileName,
+          fileSize: file.size,
+          mimetype: file.mimetype,
+          uploadType: uploadType,
+          originalFileName: originalFileName,
+        });
 
         // Usa o Use Case hexagonal (que delega para o TaskService existente)
         const result = await this.createTaskUseCase.execute({
           imagePath,
           uploadType: "multipart",
-          originalFileName: file.originalname,
+          originalFileName: originalFileName,
         });
 
         res.status(201).json({
@@ -86,8 +110,16 @@ export class HexagonalTaskController {
           message: "Task created successfully",
         });
       } else if (req.body && req.body.imagePath) {
-        // Upload via JSON (reutiliza lógica existente)
+        // JSON com imagePath (pode ser caminho local ou URL) - REUTILIZA lógica original
         imagePath = req.body.imagePath;
+        uploadType = "json";
+
+        // Valida se é uma fonte de imagem válida (URL ou caminho local) - lógica original
+        if (!this.imageProcessor.isValidImageSource(imagePath)) {
+          throw new Error(
+            "Invalid image source. Must be a valid URL or local file path with supported format."
+          );
+        }
 
         Logger.info("Image source provided via JSON", {
           imagePath,
@@ -107,26 +139,27 @@ export class HexagonalTaskController {
           message: "Task created successfully",
         });
       } else {
-        res.status(400).json({
-          success: false,
-          error: "Missing image source",
-          message: "Provide imagePath in JSON body or upload a file",
+        Logger.error("No valid input found", {
+          files: req.files,
+          body: req.body,
+          headers: req.headers,
         });
-        return;
+        throw new Error(
+          "Either imagePath (JSON - local path or URL) or file upload (multipart) is required"
+        );
       }
     } catch (error) {
       Logger.error("Error in createTask controller", {
         error: error instanceof Error ? error.message : "Unknown error",
       });
 
-      // Determina o status code baseado no tipo de erro
-      const statusCode =
+      // Determine appropriate status code based on error type (lógica original)
+      const isValidationError =
         error instanceof Error &&
-        (error.message.includes("Invalid image file") ||
-          error.message.includes("format not supported") ||
-          error.message.includes("not found"))
-          ? 400
-          : 500;
+        (error.message.includes("already been processed") ||
+          error.message.includes("Invalid image file") ||
+          error.message.includes("Invalid image source"));
+      const statusCode = isValidationError ? 400 : 500;
 
       res.status(statusCode).json({
         success: false,

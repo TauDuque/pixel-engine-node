@@ -30,6 +30,13 @@ export class ImageProcessorAdapter implements IImageProcessor {
   /**
    * Delega para o ImageProcessor existente
    */
+  isValidImageSource(source: string): boolean {
+    return ImageProcessor.isValidImageSource(source);
+  }
+
+  /**
+   * Delega para o ImageProcessor existente
+   */
   generateRandomPrice(): number {
     return ImageProcessor.generateRandomPrice();
   }

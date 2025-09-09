@@ -19,6 +19,11 @@ export interface IImageProcessor {
   isValidLocalPath(path: string): boolean;
 
   /**
+   * Valida se uma string é uma URL ou caminho local válido
+   */
+  isValidImageSource(source: string): boolean;
+
+  /**
    * Gera um preço aleatório para a tarefa
    */
   generateRandomPrice(): number;
