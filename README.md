@@ -18,31 +18,67 @@ This API provides:
 
 ## Architecture
 
-The project was designed with **Hexagonal Architecture principles** in mind, implementing a **layered architecture** with clear separation of concerns:
+The project implements **Hexagonal Architecture (Ports & Adapters)** with a **dual-architecture approach** that maintains full backward compatibility:
 
-- **Controllers**: Handle HTTP requests and responses
-- **Services**: Contain business logic and coordinate Worker Threads
-- **Models**: Define MongoDB schemas with optimized indexes
-- **Utils**: Helper functions (image processing, logging)
-- **Workers**: Background processing using Node.js Worker Threads
-- **Middleware**: Validation, error handling
-- **Config**: Database configuration, environment, Swagger
+### 🏗️ **Dual Architecture Implementation**
 
-### Architectural Approach
+**🔹 Original Architecture (`/api/tasks`)**
 
-While the project was designed with **Hexagonal Architecture principles** in mind, the implementation follows a **pragmatic layered architecture** approach. This decision was made to:
+- **Status**: Fully functional and maintained
+- **Purpose**: Legacy implementation for backward compatibility
+- **Structure**: Traditional layered architecture
+- **Use Case**: Existing integrations and clients
 
-- **Prioritize functionality** and meet all technical requirements
-- **Ensure maintainability** with clear separation of concerns
-- **Optimize development time** while maintaining code quality
-- **Focus on business value** rather than theoretical perfection
+**🔹 Hexagonal Architecture (`/api/hexagonal/tasks`)**
 
-The architecture successfully implements:
+- **Status**: New implementation with clean architecture
+- **Purpose**: Modern, testable, and maintainable codebase
+- **Structure**: Ports & Adapters pattern
+- **Use Case**: New integrations and future development
 
-- **Separation of concerns** between layers
-- **Clean interfaces** between components
-- **Testable code** with proper mocking strategies
-- **Scalable design** that can evolve toward full hexagonal implementation
+### 🎯 **Hexagonal Architecture Components**
+
+**Domain Layer:**
+
+- **Ports**: Interfaces defining contracts (`ITaskRepository`, `IImageProcessor`, `IUrlDownloader`)
+- **Use Cases**: Business logic (`CreateTaskUseCase`, `GetTaskUseCase`)
+
+**Application Layer:**
+
+- **Dependency Container**: Inversion of control and dependency injection
+- **Coordination**: Orchestrates domain and infrastructure layers
+
+**Infrastructure Layer:**
+
+- **Adapters**: Concrete implementations of ports
+- **Controllers**: HTTP request/response handling
+- **External Services**: Database, image processing, URL downloading
+
+### 🔄 **Architectural Benefits**
+
+**Separation of Concerns:**
+
+- **Domain**: Pure business logic, no external dependencies
+- **Application**: Use cases and coordination
+- **Infrastructure**: External concerns (HTTP, database, file system)
+
+**Testability:**
+
+- **Ports**: Easy to mock for unit testing
+- **Use Cases**: Testable in isolation
+- **Adapters**: Testable with real implementations
+
+**Maintainability:**
+
+- **Clear boundaries**: Each layer has specific responsibilities
+- **Dependency inversion**: High-level modules don't depend on low-level modules
+- **Flexibility**: Easy to swap implementations (e.g., different databases)
+
+**Scalability:**
+
+- **Modular design**: Components can be developed independently
+- **Technology agnostic**: Domain logic is independent of frameworks
+- **Evolution**: Easy to add new features without breaking existing code
 
 ### Asynchronous Processing
 
@@ -150,9 +186,25 @@ npm run lint:fix
 
 ## API Endpoints
 
-### Enhanced Response Format
+### 🚀 **Dual Architecture Endpoints**
 
-The API uses an enhanced response format that provides comprehensive feedback:
+The API provides **two parallel implementations** for maximum flexibility:
+
+**🔹 Original Architecture:**
+
+- **Base URL**: `/api/tasks`
+- **Status**: Stable and fully functional
+- **Use Case**: Existing integrations, backward compatibility
+
+**🔹 Hexagonal Architecture:**
+
+- **Base URL**: `/api/hexagonal/tasks`
+- **Status**: Modern implementation with clean architecture
+- **Use Case**: New integrations, future development
+
+### 📋 **Enhanced Response Format**
+
+Both architectures use the same enhanced response format:
 
 ```json
 {
@@ -164,7 +216,7 @@ The API uses an enhanced response format that provides comprehensive feedback:
 }
 ```
 
-This format offers several advantages:
+**Benefits:**
 
 - **Clear success indication**: `success` field immediately shows operation status
 - **Structured data**: `data` field contains the actual response payload
@@ -172,25 +224,29 @@ This format offers several advantages:
 - **Consistent error handling**: Failed operations follow the same structure
 - **Developer-friendly**: Easy to parse and handle in client applications
 
-### Create Task
+### 🎯 **Create Task**
 
-The API supports two methods for creating tasks:
+Both architectures support the same methods for creating tasks:
 
-#### Method 1: JSON Upload (File Path)
+#### Method 1: JSON Upload (File Path or URL)
 
 ```http
-POST /api/tasks
+POST /api/tasks                    # Original Architecture
+POST /api/hexagonal/tasks          # Hexagonal Architecture
 Content-Type: application/json
 
 {
-  "imagePath": "/path/to/image.jpg"
+  "imagePath": "/path/to/image.jpg"  # Local file path
+  # OR
+  "imagePath": "https://example.com/image.jpg"  # Image URL
 }
 ```
 
 #### Method 2: Multipart Upload (File Upload)
 
 ```http
-POST /api/tasks
+POST /api/tasks                    # Original Architecture
+POST /api/hexagonal/tasks          # Hexagonal Architecture
 Content-Type: multipart/form-data
 
 # Form field: image (file)
@@ -199,13 +255,22 @@ Content-Type: multipart/form-data
 **Example using curl:**
 
 ```bash
-# JSON method
+# Original Architecture - JSON method
 curl -X POST http://localhost:3000/api/tasks \
   -H "Content-Type: application/json" \
   -d '{"imagePath": "/path/to/image.jpg"}'
 
-# Multipart method
+# Hexagonal Architecture - JSON method
+curl -X POST http://localhost:3000/api/hexagonal/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"imagePath": "/path/to/image.jpg"}'
+
+# Original Architecture - Multipart method
 curl -X POST http://localhost:3000/api/tasks \
+  -F "image=@/path/to/image.jpg"
+
+# Hexagonal Architecture - Multipart method
+curl -X POST http://localhost:3000/api/hexagonal/tasks \
   -F "image=@/path/to/image.jpg"
 ```
 
@@ -261,10 +326,13 @@ curl -X POST http://localhost:3000/api/tasks \
 }
 ```
 
-### Get Task
+### 🔍 **Get Task**
+
+Both architectures provide the same endpoint for retrieving task information:
 
 ```http
-GET /api/tasks/{taskId}
+GET /api/tasks/{taskId}                    # Original Architecture
+GET /api/hexagonal/tasks/{taskId}          # Hexagonal Architecture
 ```
 
 **Response (completed):**
@@ -346,22 +414,79 @@ Complete API documentation is available at:
 
 ```
 src/
-├── config/          # Configuration (DB, environment, Swagger)
-├── controllers/     # HTTP controllers
-├── middleware/      # Middleware (validation, errors)
-├── models/          # MongoDB models
-├── routes/          # Route definitions
-├── services/        # Business logic
-├── tests/           # Unit and integration tests
-├── types/           # TypeScript type definitions
-├── utils/           # Utilities (image processing, logging)
-├── workers/         # Worker Threads for background processing
-└── index.ts         # Application entry point
+├── 🎯 domain/                    # Hexagonal Architecture - Domain Layer
+│   ├── ports/                    # Interfaces (contracts)
+│   │   ├── ITaskRepository.ts    # Task repository interface
+│   │   ├── IImageProcessor.ts    # Image processing interface
+│   │   └── IUrlDownloader.ts     # URL downloader interface
+│   └── usecases/                 # Business logic
+│       ├── CreateTaskUseCase.ts  # Create task business logic
+│       └── GetTaskUseCase.ts     # Get task business logic
+├── 🔧 application/               # Hexagonal Architecture - Application Layer
+│   └── container/                # Dependency injection
+│       └── DependencyContainer.ts # IoC container
+├── 🏗️ infrastructure/            # Hexagonal Architecture - Infrastructure Layer
+│   ├── adapters/                 # Port implementations
+│   │   ├── TaskRepositoryAdapter.ts    # MongoDB implementation
+│   │   ├── ImageProcessorAdapter.ts    # Sharp implementation
+│   │   └── UrlDownloaderAdapter.ts     # HTTP implementation
+│   └── controllers/              # HTTP controllers
+│       └── HexagonalTaskController.ts  # Hexagonal controller
+├── 🔧 legacy/                    # Original Architecture (Maintained)
+│   ├── controllers/              # Original HTTP controllers
+│   ├── services/                 # Original business logic
+│   ├── models/                   # MongoDB models
+│   └── utils/                    # Utilities (image processing, logging)
+├── 🛣️ routes/                    # Route definitions
+│   ├── taskRoutes.ts             # Original routes
+│   ├── hexagonalTaskRoutes.ts    # Hexagonal routes
+│   └── healthRoutes.ts           # Health check routes
+├── ⚙️ config/                    # Configuration
+│   ├── database.ts               # Database configuration
+│   ├── environment.ts            # Environment variables
+│   └── swagger.ts                # Swagger documentation
+├── 🧪 tests/                     # Comprehensive testing
+│   ├── integration/              # Integration tests
+│   │   ├── task.test.ts          # Original architecture tests
+│   │   ├── hexagonalTask.test.ts # Hexagonal architecture tests
+│   │   └── urlImage.test.ts      # URL image tests
+│   ├── unit/                     # Unit tests
+│   └── fixtures/                 # Test data
+├── 🔧 middleware/                # Middleware (validation, errors)
+├── 📝 types/                     # TypeScript type definitions
+├── ⚡ workers/                   # Worker Threads for background processing
+└── 🚀 index.ts                   # Application entry point
 
 scripts/
-├── init-database.js # Database initialization script
-└── setup-env.js     # Environment setup script
+├── init-database.js              # Database initialization script
+└── setup-env.js                  # Environment setup script
 ```
+
+### 🏗️ **Architecture Layers**
+
+**Domain Layer (`src/domain/`):**
+
+- **Pure business logic** with no external dependencies
+- **Ports**: Define contracts for external services
+- **Use Cases**: Implement business rules and workflows
+
+**Application Layer (`src/application/`):**
+
+- **Dependency injection** and service coordination
+- **Use case orchestration** and workflow management
+- **Interface between domain and infrastructure**
+
+**Infrastructure Layer (`src/infrastructure/`):**
+
+- **Adapters**: Implement domain ports with concrete technologies
+- **Controllers**: Handle HTTP requests and responses
+- **External services**: Database, file system, HTTP clients
+
+**Legacy Layer (`src/controllers/`, `src/services/`, etc.):**
+
+- **Original implementation** maintained for backward compatibility
+- **Full functionality** preserved without breaking changes
+- **Gradual migration** path to hexagonal architecture
 
 ## Database
 
