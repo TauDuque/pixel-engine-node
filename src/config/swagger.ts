@@ -7,20 +7,17 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: "Pixel Engine API",
       version: "1.0.0",
-      description: `
-        API REST para procesado de imágenes y consulta de tareas.
-        
-        **Funcionalidades:**
-        - Procesamiento asíncrono de imágenes usando Worker Threads
-        - Generación de variantes en resoluciones 1024px y 800px
-        - Sistema de precios dinámico (5-50 unidades monetarias)
-        - Prevención de imágenes duplicadas
-        - Soporte para upload JSON (path local) y multipart (archivo)
-        - Gestión de errores centralizada
-        - Documentación completa con Swagger/OpenAPI
-        
-        **Repository:** [pixel-engine-node](https://github.com/TauDuque/pixel-engine-node.git)
-      `,
+      description:
+        "API REST para procesado de imágenes y consulta de tareas con Arquitectura Hexagonal. " +
+        "Funcionalidades: Procesamiento asíncrono de imágenes usando Worker Threads, " +
+        "generación de variantes en resoluciones 1024px y 800px, sistema de precios dinámico (5-50 unidades monetarias), " +
+        "prevención de imágenes duplicadas, soporte para upload JSON (path local/URL) y multipart (archivo), " +
+        "gestión de errores centralizada, documentación completa con Swagger/OpenAPI, " +
+        "Arquitectura Hexagonal con separación clara de responsabilidades. " +
+        "Arquitectura: Rutas Originales (/api/tasks) para implementación legacy funcional, " +
+        "Rutas Hexagonales (/api/hexagonal/tasks) para nueva arquitectura con Ports & Adapters, " +
+        "Compatibilidad Total con ambas implementaciones coexistiendo sin breaking changes. " +
+        "Repository: https://github.com/TauDuque/pixel-engine-node.git",
       contact: {
         name: "API Support",
         email: "support@example.com",
@@ -39,7 +36,13 @@ const options: swaggerJsdoc.Options = {
     tags: [
       {
         name: "Tasks",
-        description: "Image processing tasks management",
+        description:
+          "Image processing tasks management (Original Architecture)",
+      },
+      {
+        name: "Tasks - Hexagonal",
+        description:
+          "Image processing tasks management (Hexagonal Architecture)",
       },
       {
         name: "Health",
