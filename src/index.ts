@@ -7,7 +7,7 @@ import { config } from "./config/environment";
 import { swaggerSpec } from "./config/swagger";
 import { ErrorHandler } from "./middleware/errorHandler";
 import { Logger } from "./utils/logger";
-import taskRoutes from "./routes/taskRoutes";
+import taskRoutes from "./routes/hexagonalTaskRoutes";
 import healthRoutes from "./routes/healthRoutes";
 
 class App {
